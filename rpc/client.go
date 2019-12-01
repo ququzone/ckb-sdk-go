@@ -9,8 +9,10 @@ import (
 
 // Client for the Nervos RPC API.
 type Client interface {
+	// GetTipBlockNumber returns the number of blocks in the longest blockchain.
 	GetTipBlockNumber(ctx context.Context) (uint64, error)
 
+	// Close close client
 	Close()
 }
 
@@ -40,7 +42,6 @@ func (cli *client) Close() {
 
 // Chain RPC
 
-// GetTipBlockNumber returns the number of blocks in the longest blockchain.
 func (cli *client) GetTipBlockNumber(ctx context.Context) (uint64, error) {
 	var num hexutil.Uint64
 	err := cli.c.CallContext(ctx, &num, "get_tip_block_number")

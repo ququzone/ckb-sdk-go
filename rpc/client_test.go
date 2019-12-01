@@ -2,10 +2,10 @@ package rpc
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 
 	mock_rpc "github.com/ququzone/ckb-sdk-go/test/mock/rpc"
 )
