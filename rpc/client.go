@@ -2,15 +2,18 @@ package rpc
 
 import (
 	"context"
-
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ququzone/ckb-sdk-go/types"
 )
 
 // Client for the Nervos RPC API.
 type Client interface {
 	// GetTipBlockNumber returns the number of blocks in the longest blockchain.
 	GetTipBlockNumber(ctx context.Context) (uint64, error)
+
+	// GetCurrentEpoch returns the information about the current epoch.
+	GetCurrentEpoch(ctx context.Context) (*types.Epoch, error)
 
 	// Close close client
 	Close()
@@ -49,4 +52,18 @@ func (cli *client) GetTipBlockNumber(ctx context.Context) (uint64, error) {
 		return 0, err
 	}
 	return uint64(num), err
+}
+
+func (cli *client) GetCurrentEpoch(ctx context.Context) (*types.Epoch, error) {
+	var result epoch
+	err := cli.c.CallContext(ctx, &result, "get_current_epoch")
+	if err != nil {
+		return nil, err
+	}
+	return &types.Epoch{
+		CompactTarget: uint64(result.CompactTarget),
+		Length:        uint64(result.Length),
+		Number:        uint64(result.Number),
+		StartNumber:   uint64(result.StartNumber),
+	}, err
 }
