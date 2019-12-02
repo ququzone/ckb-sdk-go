@@ -12,6 +12,9 @@ type Client interface {
 	// GetTipBlockNumber returns the number of blocks in the longest blockchain.
 	GetTipBlockNumber(ctx context.Context) (uint64, error)
 
+	// GetTipHeader returns the information about the tip header of the longest.
+	GetTipHeader(ctx context.Context) (*types.Header, error)
+
 	// GetCurrentEpoch returns the information about the current epoch.
 	GetCurrentEpoch(ctx context.Context) (*types.Epoch, error)
 
@@ -65,5 +68,27 @@ func (cli *client) GetCurrentEpoch(ctx context.Context) (*types.Epoch, error) {
 		Length:        uint64(result.Length),
 		Number:        uint64(result.Number),
 		StartNumber:   uint64(result.StartNumber),
+	}, err
+}
+
+func (cli *client) GetTipHeader(ctx context.Context) (*types.Header, error) {
+	var result header
+	err := cli.c.CallContext(ctx, &result, "get_tip_header")
+	if err != nil {
+		return nil, err
+	}
+	return &types.Header{
+		CompactTarget: uint64(result.CompactTarget),
+		Dao: result.Dao,
+		Epoch: uint64(result.Epoch),
+		Hash: result.Hash,
+		Nonce: result.Nonce,
+		Number: uint64(result.Number),
+		ParentHash: result.ParentHash,
+		ProposalsHash: result.ProposalsHash,
+		Timestamp: uint64(result.Timestamp),
+		TransactionsRoot: result.TransactionsRoot,
+		UnclesHash: result.UnclesHash,
+		Version: uint(result.Version),
 	}, err
 }
