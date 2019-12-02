@@ -36,6 +36,15 @@ type Client interface {
 	// GetBlock returns the information about a block by hash.
 	GetBlock(ctx context.Context, hash types.Hash) (*types.Block, error)
 
+	// GetHeader returns the information about a block header by hash.
+	GetHeader(ctx context.Context, hash types.Hash) (*types.Header, error)
+
+	// GetHeaderByNumber returns the information about a block header by block number.
+	GetHeaderByNumber(ctx context.Context, number uint64) (*types.Header, error)
+
+	// GetCellsByLockHash returns the information about cells collection by the hash of lock script.
+	GetCellsByLockHash(ctx context.Context, hash types.Hash, from uint64, to uint64) ([]*types.Cell, error)
+
 	// Close close client
 	Close()
 }
@@ -125,7 +134,7 @@ func (cli *client) GetBlockHash(ctx context.Context, number uint64) (*types.Hash
 func (cli *client) GetBlock(ctx context.Context, hash types.Hash) (*types.Block, error) {
 	var raw json.RawMessage
 
-	err := cli.c.CallContext(ctx, &raw, "get_block", hash.String())
+	err := cli.c.CallContext(ctx, &raw, "get_block", hash)
 	if err != nil {
 		return nil, err
 	} else if len(raw) == 0 {
@@ -143,4 +152,31 @@ func (cli *client) GetBlock(ctx context.Context, hash types.Hash) (*types.Block,
 		Transactions: toTransactions(block.Transactions),
 		Uncles:       toUncles(block.Uncles),
 	}, nil
+}
+
+func (cli *client) GetHeader(ctx context.Context, hash types.Hash) (*types.Header, error) {
+	var result header
+	err := cli.c.CallContext(ctx, &result, "get_header", hash)
+	if err != nil {
+		return nil, err
+	}
+	return toHeader(result), err
+}
+
+func (cli *client) GetHeaderByNumber(ctx context.Context, number uint64) (*types.Header, error) {
+	var result header
+	err := cli.c.CallContext(ctx, &result, "get_header_by_number", hexutil.Uint64(number))
+	if err != nil {
+		return nil, err
+	}
+	return toHeader(result), err
+}
+
+func (cli *client) GetCellsByLockHash(ctx context.Context, hash types.Hash, from uint64, to uint64) ([]*types.Cell, error) {
+	var result []cell
+	err := cli.c.CallContext(ctx, &result, "get_cells_by_lock_hash", hash, hexutil.Uint64(from), hexutil.Uint64(to))
+	if err != nil {
+		return nil, err
+	}
+	return toCells(result), err
 }

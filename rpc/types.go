@@ -80,6 +80,14 @@ type block struct {
 	Uncles       []UncleBlock   `json:"uncles"`
 }
 
+type cell struct {
+	BlockHash types.Hash  `json:"block_hash"`
+	Capacity  hexutil.Big `json:"capacity"`
+	Lock      *script     `json:"lock"`
+	OutPoint  *outPoint   `json:"out_point"`
+	Type      *script     `json:"type"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),
@@ -191,6 +199,34 @@ func toUncles(uncles []UncleBlock) []*types.UncleBlock {
 		result[i] = &types.UncleBlock{
 			Header:    toHeader(block.Header),
 			Proposals: toUints(block.Proposals),
+		}
+	}
+	return result
+}
+
+func toCells(cells []cell) []*types.Cell {
+	result := make([]*types.Cell, len(cells))
+	for i := 0; i < len(cells); i++ {
+		cell := cells[i]
+		result[i] = &types.Cell{
+			BlockHash: cell.BlockHash,
+			Capacity:  (*big.Int)(&cell.Capacity),
+			Lock: &types.Script{
+				CodeHash: cell.Lock.CodeHash,
+				HashType: cell.Lock.HashType,
+				Args:     cell.Lock.Args,
+			},
+			OutPoint: &types.OutPoint{
+				TxHash: cell.OutPoint.TxHash,
+				Index:  uint64(cell.OutPoint.Index),
+			},
+		}
+		if cell.Type != nil {
+			result[i].Type = &types.Script{
+				CodeHash: cell.Type.CodeHash,
+				HashType: cell.Type.HashType,
+				Args:     cell.Type.Args,
+			}
 		}
 	}
 	return result
