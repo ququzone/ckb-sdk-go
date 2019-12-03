@@ -60,6 +60,12 @@ type Client interface {
 	// GetBlockByNumber get block by number
 	GetBlockByNumber(ctx context.Context, number uint64) (*types.Block, error)
 
+	// DryRunTransaction dry run transaction and return the execution cycles.
+	// This method will not check the transaction validity,
+	// but only run the lock script and type script and then return the execution cycles.
+	// Used to debug transaction scripts and query how many cycles the scripts consume.
+	DryRunTransaction(ctx context.Context, transaction *types.Transaction) (*types.DryRunTransactionResult, error)
+
 	// Close close client
 	Close()
 }
@@ -260,4 +266,16 @@ func (cli *client) GetBlockByNumber(ctx context.Context, number uint64) (*types.
 		Transactions: toTransactions(block.Transactions),
 		Uncles:       toUncles(block.Uncles),
 	}, nil
+}
+
+func (cli *client) DryRunTransaction(ctx context.Context, transaction *types.Transaction) (*types.DryRunTransactionResult, error) {
+	var result dryRunTransactionResult
+	err := cli.c.CallContext(ctx, &result, "dry_run_transaction", fromTransaction(transaction))
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.DryRunTransactionResult{
+		Cycles: uint64(result.Cycles),
+	}, err
 }

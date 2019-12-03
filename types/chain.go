@@ -9,15 +9,15 @@ type DepType string
 type TransactionStatus string
 
 const (
-	Data ScriptHashType = "data"
-	Type ScriptHashType = "type"
+	HashTypeData ScriptHashType = "data"
+	HashTypeType ScriptHashType = "type"
 
-	Code     DepType = "code"
-	DepGroup DepType = "dep_group"
+	DepTypeCode     DepType = "code"
+	DepTypeDepGroup DepType = "dep_group"
 
-	Pending   TransactionStatus = "pending"
-	Proposed  TransactionStatus = "proposed"
-	Committed TransactionStatus = "committed"
+	TransactionStatusPending   TransactionStatus = "pending"
+	TransactionStatusProposed  TransactionStatus = "proposed"
+	TransactionStatusCommitted TransactionStatus = "committed"
 )
 
 type Epoch struct {
@@ -116,7 +116,7 @@ type CellWithStatus struct {
 }
 
 type TxStatus struct {
-	BlockHash *Hash             `json:"block_hash"`
+	BlockHash Hash              `json:"block_hash"`
 	Status    TransactionStatus `json:"status"`
 }
 
@@ -131,4 +131,8 @@ type BlockReward struct {
 	Secondary      *big.Int `json:"secondary"`
 	Total          *big.Int `json:"total"`
 	TxFee          *big.Int `json:"tx_fee"`
+}
+
+type DryRunTransactionResult struct {
+	Cycles uint64 `json:"cycles"`
 }

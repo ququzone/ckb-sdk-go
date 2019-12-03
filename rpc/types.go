@@ -68,7 +68,17 @@ type transaction struct {
 	Witnesses   []hexutil.Bytes `json:"witnesses"`
 }
 
-type UncleBlock struct {
+type inTransaction struct {
+	Version     hexutil.Uint    `json:"version"`
+	CellDeps    []cellDep       `json:"cell_deps"`
+	HeaderDeps  []types.Hash    `json:"header_deps"`
+	Inputs      []cellInput     `json:"inputs"`
+	Outputs     []cellOutput    `json:"outputs"`
+	OutputsData []hexutil.Bytes `json:"outputs_data"`
+	Witnesses   []hexutil.Bytes `json:"witnesses"`
+}
+
+type uncleBlock struct {
 	Header    header         `json:"header"`
 	Proposals []hexutil.Uint `json:"proposals"`
 }
@@ -77,7 +87,7 @@ type block struct {
 	Header       header         `json:"header"`
 	Proposals    []hexutil.Uint `json:"proposals"`
 	Transactions []transaction  `json:"transactions"`
-	Uncles       []UncleBlock   `json:"uncles"`
+	Uncles       []uncleBlock   `json:"uncles"`
 }
 
 type cell struct {
@@ -106,7 +116,7 @@ type cellWithStatus struct {
 type transactionWithStatus struct {
 	Transaction transaction `json:"transaction"`
 	TxStatus    struct {
-		BlockHash *types.Hash             `json:"block_hash"`
+		BlockHash types.Hash              `json:"block_hash"`
 		Status    types.TransactionStatus `json:"status"`
 	} `json:"tx_status"`
 }
@@ -117,6 +127,10 @@ type blockReward struct {
 	Secondary      hexutil.Big `json:"secondary"`
 	Total          hexutil.Big `json:"total"`
 	TxFee          hexutil.Big `json:"tx_fee"`
+}
+
+type dryRunTransactionResult struct {
+	Cycles hexutil.Uint64 `json:"cycles"`
 }
 
 func toHeader(head header) *types.Header {
@@ -226,7 +240,7 @@ func toUints(uints []hexutil.Uint) []uint {
 	return result
 }
 
-func toUncles(uncles []UncleBlock) []*types.UncleBlock {
+func toUncles(uncles []uncleBlock) []*types.UncleBlock {
 	result := make([]*types.UncleBlock, len(uncles))
 	for i := 0; i < len(uncles); i++ {
 		block := uncles[i]
@@ -296,5 +310,79 @@ func toCellWithStatus(status cellWithStatus) *types.CellWithStatus {
 		}
 	}
 
+	return result
+}
+
+func fromCellDeps(deps []*types.CellDep) []cellDep {
+	result := make([]cellDep, len(deps))
+	for i := 0; i < len(deps); i++ {
+		dep := deps[i]
+		result[i] = cellDep{
+			OutPoint: outPoint{
+				TxHash: dep.OutPoint.TxHash,
+				Index:  hexutil.Uint64(dep.OutPoint.Index),
+			},
+			DepType: dep.DepType,
+		}
+	}
+	return result
+}
+
+func fromInputs(inputs []*types.CellInput) []cellInput {
+	result := make([]cellInput, len(inputs))
+	for i := 0; i < len(inputs); i++ {
+		input := inputs[i]
+		result[i] = cellInput{
+			Since: hexutil.Uint64(input.Since),
+			PreviousOutput: outPoint{
+				TxHash: input.PreviousOutput.TxHash,
+				Index:  hexutil.Uint64(input.PreviousOutput.Index),
+			},
+		}
+	}
+	return result
+}
+
+func fromOutputs(outputs []*types.CellOutput) []cellOutput {
+	result := make([]cellOutput, len(outputs))
+	for i := 0; i < len(outputs); i++ {
+		output := outputs[i]
+		result[i] = cellOutput{
+			Capacity: (hexutil.Big)(*output.Capacity),
+			Lock: &script{
+				CodeHash: output.Lock.CodeHash,
+				HashType: output.Lock.HashType,
+				Args:     output.Lock.Args,
+			},
+		}
+		if output.Type != nil {
+			result[i].Type = &script{
+				CodeHash: output.Type.CodeHash,
+				HashType: output.Type.HashType,
+				Args:     output.Type.Args,
+			}
+		}
+	}
+	return result
+}
+
+func fromBytesArray(bytes [][]byte) []hexutil.Bytes {
+	result := make([]hexutil.Bytes, len(bytes))
+	for i, data := range bytes {
+		result[i] = data
+	}
+	return result
+}
+
+func fromTransaction(tx *types.Transaction) inTransaction {
+	result := inTransaction{
+		Version:     hexutil.Uint(tx.Version),
+		HeaderDeps:  tx.HeaderDeps,
+		CellDeps:    fromCellDeps(tx.CellDeps),
+		Inputs:      fromInputs(tx.Inputs),
+		Outputs:     fromOutputs(tx.Outputs),
+		OutputsData: fromBytesArray(tx.OutputsData),
+		Witnesses:   fromBytesArray(tx.Witnesses),
+	}
 	return result
 }
