@@ -132,7 +132,3 @@ type BlockReward struct {
 	Total          *big.Int `json:"total"`
 	TxFee          *big.Int `json:"tx_fee"`
 }
-
-type DryRunTransactionResult struct {
-	Cycles uint64 `json:"cycles"`
-}

@@ -133,6 +133,10 @@ type dryRunTransactionResult struct {
 	Cycles hexutil.Uint64 `json:"cycles"`
 }
 
+type estimateFeeRateResult struct {
+	FeeRate hexutil.Uint64 `json:"fee_rate"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),

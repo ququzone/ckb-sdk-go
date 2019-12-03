@@ -60,11 +60,18 @@ type Client interface {
 	// GetBlockByNumber get block by number
 	GetBlockByNumber(ctx context.Context, number uint64) (*types.Block, error)
 
+	////// Experiment
 	// DryRunTransaction dry run transaction and return the execution cycles.
 	// This method will not check the transaction validity,
 	// but only run the lock script and type script and then return the execution cycles.
 	// Used to debug transaction scripts and query how many cycles the scripts consume.
 	DryRunTransaction(ctx context.Context, transaction *types.Transaction) (*types.DryRunTransactionResult, error)
+
+	// CalculateDaoMaximumWithdraw calculate the maximum withdraw one can get, given a referenced DAO cell, and a withdraw block hash.
+	CalculateDaoMaximumWithdraw(ctx context.Context, point *types.OutPoint, hash types.Hash) (*big.Int, error)
+
+	// EstimateFeeRate Estimate a fee rate (capacity/KB) for a transaction that to be committed in expect blocks.
+	EstimateFeeRate(ctx context.Context, blocks uint64) (*types.EstimateFeeRateResult, error)
 
 	// Close close client
 	Close()
@@ -277,5 +284,28 @@ func (cli *client) DryRunTransaction(ctx context.Context, transaction *types.Tra
 
 	return &types.DryRunTransactionResult{
 		Cycles: uint64(result.Cycles),
+	}, err
+}
+
+func (cli *client) CalculateDaoMaximumWithdraw(ctx context.Context, point *types.OutPoint, hash types.Hash) (*big.Int, error) {
+	var result hexutil.Big
+	err := cli.c.CallContext(ctx, &result, "calculate_dao_maximum_withdraw", outPoint{TxHash: point.TxHash, Index: hexutil.Uint64(point.Index)}, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return (*big.Int)(&result), err
+}
+
+func (cli *client) EstimateFeeRate(ctx context.Context, blocks uint64) (*types.EstimateFeeRateResult, error) {
+	var result estimateFeeRateResult
+
+	err := cli.c.CallContext(ctx, &result, "estimate_fee_rate", hexutil.Uint64(blocks))
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.EstimateFeeRateResult{
+		FeeRate: uint64(result.FeeRate),
 	}, err
 }
