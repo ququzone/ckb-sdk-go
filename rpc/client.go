@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -44,6 +45,20 @@ type Client interface {
 
 	// GetCellsByLockHash returns the information about cells collection by the hash of lock script.
 	GetCellsByLockHash(ctx context.Context, hash types.Hash, from uint64, to uint64) ([]*types.Cell, error)
+
+	// GetLiveCell returns the information about a cell by out_point if it is live.
+	// If second with_data argument set to true, will return cell data and data_hash if it is live.
+	GetLiveCell(ctx context.Context, outPoint *types.OutPoint, withData bool) (*types.CellWithStatus, error)
+
+	// GetTransaction returns the information about a transaction requested by transaction hash.
+	GetTransaction(ctx context.Context, hash types.Hash) (*types.TransactionWithStatus, error)
+
+	// GetCellbaseOutputCapacityDetails returns each component of the created CKB in this block's cellbase,
+	// which is issued to a block N - 1 - ProposalWindow.farthest, where this block's height is N.
+	GetCellbaseOutputCapacityDetails(ctx context.Context, hash types.Hash) (*types.BlockReward, error)
+
+	// GetBlockByNumber get block by number
+	GetBlockByNumber(ctx context.Context, number uint64) (*types.Block, error)
 
 	// Close close client
 	Close()
@@ -179,4 +194,70 @@ func (cli *client) GetCellsByLockHash(ctx context.Context, hash types.Hash, from
 		return nil, err
 	}
 	return toCells(result), err
+}
+
+func (cli *client) GetLiveCell(ctx context.Context, point *types.OutPoint, withData bool) (*types.CellWithStatus, error) {
+	var result cellWithStatus
+	err := cli.c.CallContext(ctx, &result, "get_live_cell", outPoint{
+		TxHash: point.TxHash,
+		Index:  hexutil.Uint64(point.Index),
+	}, true)
+	if err != nil {
+		return nil, err
+	}
+	return toCellWithStatus(result), err
+}
+
+func (cli *client) GetTransaction(ctx context.Context, hash types.Hash) (*types.TransactionWithStatus, error) {
+	var result transactionWithStatus
+	err := cli.c.CallContext(ctx, &result, "get_transaction", hash)
+	if err != nil {
+		return nil, err
+	}
+	return &types.TransactionWithStatus{
+		Transaction: toTransaction(result.Transaction),
+		TxStatus: &types.TxStatus{
+			BlockHash: result.TxStatus.BlockHash,
+			Status:    result.TxStatus.Status,
+		},
+	}, err
+}
+
+func (cli *client) GetCellbaseOutputCapacityDetails(ctx context.Context, hash types.Hash) (*types.BlockReward, error) {
+	var result blockReward
+	err := cli.c.CallContext(ctx, &result, "get_cellbase_output_capacity_details", hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.BlockReward{
+		Primary:        (*big.Int)(&result.Primary),
+		ProposalReward: (*big.Int)(&result.ProposalReward),
+		Secondary:      (*big.Int)(&result.Secondary),
+		Total:          (*big.Int)(&result.Total),
+		TxFee:          (*big.Int)(&result.TxFee),
+	}, err
+}
+
+func (cli *client) GetBlockByNumber(ctx context.Context, number uint64) (*types.Block, error) {
+	var raw json.RawMessage
+
+	err := cli.c.CallContext(ctx, &raw, "get_block_by_number", hexutil.Uint64(number))
+	if err != nil {
+		return nil, err
+	} else if len(raw) == 0 {
+		return nil, NotFound
+	}
+
+	var block block
+	if err := json.Unmarshal(raw, &block); err != nil {
+		return nil, err
+	}
+
+	return &types.Block{
+		Header:       toHeader(block.Header),
+		Proposals:    toUints(block.Proposals),
+		Transactions: toTransactions(block.Transactions),
+		Uncles:       toUncles(block.Uncles),
+	}, nil
 }

@@ -6,6 +6,7 @@ import (
 
 type ScriptHashType string
 type DepType string
+type TransactionStatus string
 
 const (
 	Data ScriptHashType = "data"
@@ -13,6 +14,10 @@ const (
 
 	Code     DepType = "code"
 	DepGroup DepType = "dep_group"
+
+	Pending   TransactionStatus = "pending"
+	Proposed  TransactionStatus = "proposed"
+	Committed TransactionStatus = "committed"
 )
 
 type Epoch struct {
@@ -93,4 +98,37 @@ type Cell struct {
 	Lock      *Script   `json:"lock"`
 	OutPoint  *OutPoint `json:"out_point"`
 	Type      *Script   `json:"type"`
+}
+
+type CellData struct {
+	Content []byte `json:"content"`
+	Hash    Hash   `json:"hash"`
+}
+
+type CellInfo struct {
+	Data   *CellData   `json:"data"`
+	Output *CellOutput `json:"output"`
+}
+
+type CellWithStatus struct {
+	Cell   *CellInfo `json:"cell"`
+	Status string    `json:"status"`
+}
+
+type TxStatus struct {
+	BlockHash *Hash             `json:"block_hash"`
+	Status    TransactionStatus `json:"status"`
+}
+
+type TransactionWithStatus struct {
+	Transaction *Transaction `json:"transaction"`
+	TxStatus    *TxStatus    `json:"tx_status"`
+}
+
+type BlockReward struct {
+	Primary        *big.Int `json:"primary"`
+	ProposalReward *big.Int `json:"proposal_reward"`
+	Secondary      *big.Int `json:"secondary"`
+	Total          *big.Int `json:"total"`
+	TxFee          *big.Int `json:"tx_fee"`
 }

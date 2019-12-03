@@ -88,6 +88,37 @@ type cell struct {
 	Type      *script     `json:"type"`
 }
 
+type cellData struct {
+	Content hexutil.Bytes `json:"content"`
+	Hash    types.Hash    `json:"hash"`
+}
+
+type cellInfo struct {
+	Data   *cellData  `json:"data"`
+	Output cellOutput `json:"output"`
+}
+
+type cellWithStatus struct {
+	Cell   cellInfo `json:"cell"`
+	Status string   `json:"status"`
+}
+
+type transactionWithStatus struct {
+	Transaction transaction `json:"transaction"`
+	TxStatus    struct {
+		BlockHash *types.Hash             `json:"block_hash"`
+		Status    types.TransactionStatus `json:"status"`
+	} `json:"tx_status"`
+}
+
+type blockReward struct {
+	Primary        hexutil.Big `json:"primary"`
+	ProposalReward hexutil.Big `json:"proposal_reward"`
+	Secondary      hexutil.Big `json:"secondary"`
+	Total          hexutil.Big `json:"total"`
+	TxFee          hexutil.Big `json:"tx_fee"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),
@@ -105,20 +136,23 @@ func toHeader(head header) *types.Header {
 	}
 }
 
+func toTransaction(tx transaction) *types.Transaction {
+	return &types.Transaction{
+		Version:     uint(tx.Version),
+		Hash:        tx.Hash,
+		CellDeps:    toCellDeps(tx.CellDeps),
+		HeaderDeps:  tx.HeaderDeps,
+		Inputs:      toInputs(tx.Inputs),
+		Outputs:     toOutputs(tx.Outputs),
+		OutputsData: toBytesArray(tx.OutputsData),
+		Witnesses:   toBytesArray(tx.Witnesses),
+	}
+}
+
 func toTransactions(transactions []transaction) []*types.Transaction {
 	result := make([]*types.Transaction, len(transactions))
 	for i := 0; i < len(transactions); i++ {
-		tx := transactions[i]
-		result[i] = &types.Transaction{
-			Version:     uint(tx.Version),
-			Hash:        tx.Hash,
-			CellDeps:    toCellDeps(tx.CellDeps),
-			HeaderDeps:  tx.HeaderDeps,
-			Inputs:      toInputs(tx.Inputs),
-			Outputs:     toOutputs(tx.Outputs),
-			OutputsData: toBytesArray(tx.OutputsData),
-			Witnesses:   toBytesArray(tx.Witnesses),
-		}
+		result[i] = toTransaction(transactions[i])
 	}
 	return result
 }
@@ -229,5 +263,38 @@ func toCells(cells []cell) []*types.Cell {
 			}
 		}
 	}
+	return result
+}
+
+func toCellWithStatus(status cellWithStatus) *types.CellWithStatus {
+	result := &types.CellWithStatus{
+		Cell: &types.CellInfo{
+			Output: &types.CellOutput{
+				Capacity: (*big.Int)(&status.Cell.Output.Capacity),
+				Lock: &types.Script{
+					CodeHash: status.Cell.Output.Lock.CodeHash,
+					HashType: status.Cell.Output.Lock.HashType,
+					Args:     status.Cell.Output.Lock.Args,
+				},
+			},
+		},
+		Status: status.Status,
+	}
+
+	if status.Cell.Data != nil {
+		result.Cell.Data = &types.CellData{
+			Content: status.Cell.Data.Content,
+			Hash:    status.Cell.Data.Hash,
+		}
+	}
+
+	if status.Cell.Output.Type != nil {
+		result.Cell.Output.Type = &types.Script{
+			CodeHash: status.Cell.Output.Type.CodeHash,
+			HashType: status.Cell.Output.Type.HashType,
+			Args:     status.Cell.Output.Type.Args,
+		}
+	}
+
 	return result
 }
