@@ -87,6 +87,9 @@ type Client interface {
 	// Returns empty array when the lock_hash has not been indexed yet.
 	GetTransactionsByLockHash(ctx context.Context, lockHash types.Hash, page uint, per uint, reverseOrder bool) ([]*types.CellTransaction, error)
 
+	// DeindexLockHash Remove index for live cells and transactions by the hash of lock script.
+	DeindexLockHash(ctx context.Context, lockHash types.Hash) error
+
 	// Close close client
 	Close()
 }
@@ -427,4 +430,8 @@ func (cli *client) GetTransactionsByLockHash(ctx context.Context, lockHash types
 		}
 	}
 	return ret, err
+}
+
+func (cli *client) DeindexLockHash(ctx context.Context, lockHash types.Hash) error {
+	return cli.c.CallContext(ctx, nil, "deindex_lock_hash", lockHash)
 }
