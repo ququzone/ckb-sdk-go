@@ -159,6 +159,18 @@ type cellTransaction struct {
 	CreatedBy  *transactionPoint `json:"created_by"`
 }
 
+type nodeAddress struct {
+	Address string         `json:"address"`
+	Score   hexutil.Uint64 `json:"score"`
+}
+
+type node struct {
+	Addresses  []*nodeAddress `json:"addresses"`
+	IsOutbound bool           `json:"is_outbound"`
+	NodeId     string         `json:"node_id"`
+	Version    string         `json:"version"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),

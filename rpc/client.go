@@ -90,6 +90,10 @@ type Client interface {
 	// DeindexLockHash Remove index for live cells and transactions by the hash of lock script.
 	DeindexLockHash(ctx context.Context, lockHash types.Hash) error
 
+	////// Net
+	// LocalNodeInfo returns the local node information.
+	LocalNodeInfo(ctx context.Context) (*types.Node, error)
+
 	// Close close client
 	Close()
 }
@@ -434,4 +438,29 @@ func (cli *client) GetTransactionsByLockHash(ctx context.Context, lockHash types
 
 func (cli *client) DeindexLockHash(ctx context.Context, lockHash types.Hash) error {
 	return cli.c.CallContext(ctx, nil, "deindex_lock_hash", lockHash)
+}
+
+func (cli *client) LocalNodeInfo(ctx context.Context) (*types.Node, error) {
+	var result node
+
+	err := cli.c.CallContext(ctx, &result, "local_node_info")
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &types.Node{
+		IsOutbound: result.IsOutbound,
+		NodeId:     result.NodeId,
+		Version:    result.Version,
+	}
+	ret.Addresses = make([]*types.NodeAddress, len(result.Addresses))
+	for i := 0; i < len(result.Addresses); i++ {
+		address := result.Addresses[i]
+		ret.Addresses[i] = &types.NodeAddress{
+			Address: address.Address,
+			Score:   uint64(address.Score),
+		}
+	}
+
+	return ret, err
 }
