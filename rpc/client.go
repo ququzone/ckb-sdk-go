@@ -94,6 +94,9 @@ type Client interface {
 	// LocalNodeInfo returns the local node information.
 	LocalNodeInfo(ctx context.Context) (*types.Node, error)
 
+	// GetPeers returns the connected peers information.
+	GetPeers(ctx context.Context) ([]*types.Node, error)
+
 	// Close close client
 	Close()
 }
@@ -448,18 +451,20 @@ func (cli *client) LocalNodeInfo(ctx context.Context) (*types.Node, error) {
 		return nil, err
 	}
 
-	ret := &types.Node{
-		IsOutbound: result.IsOutbound,
-		NodeId:     result.NodeId,
-		Version:    result.Version,
+	return toNode(result), err
+}
+
+func (cli *client) GetPeers(ctx context.Context) ([]*types.Node, error) {
+	var result []node
+
+	err := cli.c.CallContext(ctx, &result, "get_peers")
+	if err != nil {
+		return nil, err
 	}
-	ret.Addresses = make([]*types.NodeAddress, len(result.Addresses))
-	for i := 0; i < len(result.Addresses); i++ {
-		address := result.Addresses[i]
-		ret.Addresses[i] = &types.NodeAddress{
-			Address: address.Address,
-			Score:   uint64(address.Score),
-		}
+
+	ret := make([]*types.Node, len(result))
+	for i := 0; i < len(result); i++ {
+		ret[i] = toNode(result[i])
 	}
 
 	return ret, err

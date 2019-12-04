@@ -424,3 +424,20 @@ func fromTransaction(tx *types.Transaction) inTransaction {
 	}
 	return result
 }
+
+func toNode(result node) *types.Node {
+	ret := &types.Node{
+		IsOutbound: result.IsOutbound,
+		NodeId:     result.NodeId,
+		Version:    result.Version,
+	}
+	ret.Addresses = make([]*types.NodeAddress, len(result.Addresses))
+	for i := 0; i < len(result.Addresses); i++ {
+		address := result.Addresses[i]
+		ret.Addresses[i] = &types.NodeAddress{
+			Address: address.Address,
+			Score:   uint64(address.Score),
+		}
+	}
+	return ret
+}
