@@ -178,6 +178,15 @@ type bannedAddress struct {
 	CreatedAt hexutil.Uint64 `json:"created_at"`
 }
 
+type txPoolInfo struct {
+	LastTxsUpdatedAt hexutil.Uint64 `json:"last_txs_updated_at"`
+	Orphan           hexutil.Uint64 `json:"orphan"`
+	Pending          hexutil.Uint64 `json:"pending"`
+	Proposed         hexutil.Uint64 `json:"proposed"`
+	TotalTxCycles    hexutil.Uint64 `json:"total_tx_cycles"`
+	TotalTxSize      hexutil.Uint64 `json:"total_tx_size"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),

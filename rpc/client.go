@@ -103,6 +103,15 @@ type Client interface {
 	// SetBan insert or delete an IP/Subnet from the banned list
 	SetBan(ctx context.Context, address string, command string, banTime uint64, absolute bool, reason string) error
 
+	////// Pool
+	// SendTransaction send new transaction into transaction pool.
+	SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Hash, error)
+
+	// TxPoolInfo return the transaction pool information
+	TxPoolInfo(ctx context.Context) (*types.TxPoolInfo, error)
+
+	////// Stats
+
 	// Close close client
 	Close()
 }
@@ -499,4 +508,33 @@ func (cli *client) GetBannedAddresses(ctx context.Context) ([]*types.BannedAddre
 
 func (cli *client) SetBan(ctx context.Context, address string, command string, banTime uint64, absolute bool, reason string) error {
 	return cli.c.CallContext(ctx, nil, "set_ban", address, command, hexutil.Uint64(banTime), absolute, reason)
+}
+
+func (cli *client) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Hash, error) {
+	var result types.Hash
+
+	err := cli.c.CallContext(ctx, &result, "send_transaction", fromTransaction(tx))
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, err
+}
+
+func (cli *client) TxPoolInfo(ctx context.Context) (*types.TxPoolInfo, error) {
+	var result txPoolInfo
+
+	err := cli.c.CallContext(ctx, &result, "tx_pool_info")
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TxPoolInfo{
+		LastTxsUpdatedAt: uint64(result.LastTxsUpdatedAt),
+		Orphan:           uint64(result.Orphan),
+		Pending:          uint64(result.Pending),
+		Proposed:         uint64(result.Proposed),
+		TotalTxCycles:    uint64(result.TotalTxCycles),
+		TotalTxSize:      uint64(result.TotalTxSize),
+	}, err
 }
