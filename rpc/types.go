@@ -187,6 +187,22 @@ type txPoolInfo struct {
 	TotalTxSize      hexutil.Uint64 `json:"total_tx_size"`
 }
 
+type alertMessage struct {
+	Id          string         `json:"id"`
+	Message     string         `json:"message"`
+	NoticeUntil hexutil.Uint64 `json:"notice_until"`
+	Priority    string         `json:"priority"`
+}
+
+type blockchainInfo struct {
+	Alerts                 []*alertMessage `json:"alerts"`
+	Chain                  string          `json:"chain"`
+	Difficulty             hexutil.Big     `json:"difficulty"`
+	Epoch                  hexutil.Uint64  `json:"epoch"`
+	IsInitialBlockDownload bool            `json:"is_initial_block_download"`
+	MedianTime             hexutil.Uint64  `json:"median_time"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),

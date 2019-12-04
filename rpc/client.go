@@ -111,6 +111,8 @@ type Client interface {
 	TxPoolInfo(ctx context.Context) (*types.TxPoolInfo, error)
 
 	////// Stats
+	// GetBlockchainInfo return state info of blockchain
+	GetBlockchainInfo(ctx context.Context) (*types.BlockchainInfo, error)
 
 	// Close close client
 	Close()
@@ -537,4 +539,33 @@ func (cli *client) TxPoolInfo(ctx context.Context) (*types.TxPoolInfo, error) {
 		TotalTxCycles:    uint64(result.TotalTxCycles),
 		TotalTxSize:      uint64(result.TotalTxSize),
 	}, err
+}
+
+func (cli *client) GetBlockchainInfo(ctx context.Context) (*types.BlockchainInfo, error) {
+	var result blockchainInfo
+
+	err := cli.c.CallContext(ctx, &result, "get_blockchain_info")
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &types.BlockchainInfo{
+		Chain:                  result.Chain,
+		Difficulty:             (*big.Int)(&result.Difficulty),
+		Epoch:                  uint64(result.Epoch),
+		IsInitialBlockDownload: result.IsInitialBlockDownload,
+		MedianTime:             uint64(result.MedianTime),
+	}
+
+	ret.Alerts = make([]*types.AlertMessage, len(result.Alerts))
+	for i := 0; i < len(result.Alerts); i++ {
+		ret.Alerts[i] = &types.AlertMessage{
+			Id:          result.Alerts[i].Id,
+			Message:     result.Alerts[i].Message,
+			NoticeUntil: uint64(result.Alerts[i].NoticeUntil),
+			Priority:    result.Alerts[i].Priority,
+		}
+	}
+
+	return ret, err
 }
