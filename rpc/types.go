@@ -154,6 +154,11 @@ type liveCell struct {
 	CreatedBy  transactionPoint `json:"created_by"`
 }
 
+type cellTransaction struct {
+	ConsumedBy *transactionPoint `json:"consumed_by"`
+	CreatedBy  *transactionPoint `json:"created_by"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),

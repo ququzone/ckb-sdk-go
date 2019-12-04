@@ -16,3 +16,8 @@ type LiveCell struct {
 	CellOutput *CellOutput       `json:"cell_output"`
 	CreatedBy  *TransactionPoint `json:"created_by"`
 }
+
+type CellTransaction struct {
+	ConsumedBy *TransactionPoint `json:"consumed_by"`
+	CreatedBy  *TransactionPoint `json:"created_by"`
+}

@@ -83,6 +83,10 @@ type Client interface {
 	// GetLiveCellsByLockHash returns the live cells collection by the hash of lock script.
 	GetLiveCellsByLockHash(ctx context.Context, lockHash types.Hash, page uint, per uint, reverseOrder bool) ([]*types.LiveCell, error)
 
+	// GetTransactionsByLockHash returns the transactions collection by the hash of lock script.
+	// Returns empty array when the lock_hash has not been indexed yet.
+	GetTransactionsByLockHash(ctx context.Context, lockHash types.Hash, page uint, per uint, reverseOrder bool) ([]*types.CellTransaction, error)
+
 	// Close close client
 	Close()
 }
@@ -392,5 +396,35 @@ func (cli *client) GetLiveCellsByLockHash(ctx context.Context, lockHash types.Ha
 		}
 	}
 
+	return ret, err
+}
+
+func (cli *client) GetTransactionsByLockHash(ctx context.Context, lockHash types.Hash, page uint, per uint, reverseOrder bool) ([]*types.CellTransaction, error) {
+	var result []cellTransaction
+
+	err := cli.c.CallContext(ctx, &result, "get_transactions_by_lock_hash", lockHash, hexutil.Uint(page), hexutil.Uint(per), reverseOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*types.CellTransaction, len(result))
+
+	for i := 0; i < len(result); i++ {
+		tx := result[i]
+		ret[i] = &types.CellTransaction{
+			CreatedBy: &types.TransactionPoint{
+				BlockNumber: uint64(tx.CreatedBy.BlockNumber),
+				Index:       uint64(tx.CreatedBy.Index),
+				TxHash:      tx.CreatedBy.TxHash,
+			},
+		}
+		if tx.ConsumedBy != nil {
+			ret[i].ConsumedBy = &types.TransactionPoint{
+				BlockNumber: uint64(tx.ConsumedBy.BlockNumber),
+				Index:       uint64(tx.ConsumedBy.Index),
+				TxHash:      tx.ConsumedBy.TxHash,
+			}
+		}
+	}
 	return ret, err
 }
