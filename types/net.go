@@ -11,3 +11,10 @@ type Node struct {
 	NodeId     string         `json:"node_id"`
 	Version    string         `json:"version"`
 }
+
+type BannedAddress struct {
+	Address   string `json:"address"`
+	BanReason string `json:"ban_reason"`
+	BanUntil  uint64 `json:"ban_until"`
+	CreatedAt uint64 `json:"created_at"`
+}

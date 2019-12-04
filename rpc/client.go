@@ -97,6 +97,12 @@ type Client interface {
 	// GetPeers returns the connected peers information.
 	GetPeers(ctx context.Context) ([]*types.Node, error)
 
+	// GetBannedAddresses returns all banned IPs/Subnets.
+	GetBannedAddresses(ctx context.Context) ([]*types.BannedAddress, error)
+
+	// SetBan insert or delete an IP/Subnet from the banned list
+	SetBan(ctx context.Context, address string, command string, banTime uint64, absolute bool, reason string) error
+
 	// Close close client
 	Close()
 }
@@ -468,4 +474,29 @@ func (cli *client) GetPeers(ctx context.Context) ([]*types.Node, error) {
 	}
 
 	return ret, err
+}
+
+func (cli *client) GetBannedAddresses(ctx context.Context) ([]*types.BannedAddress, error) {
+	var result []bannedAddress
+
+	err := cli.c.CallContext(ctx, &result, "get_banned_addresses")
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*types.BannedAddress, len(result))
+	for i := 0; i < len(result); i++ {
+		ret[i] = &types.BannedAddress{
+			Address:   result[i].Address,
+			BanReason: result[i].BanReason,
+			BanUntil:  uint64(result[i].BanUntil),
+			CreatedAt: uint64(result[i].CreatedAt),
+		}
+	}
+
+	return ret, err
+}
+
+func (cli *client) SetBan(ctx context.Context, address string, command string, banTime uint64, absolute bool, reason string) error {
+	return cli.c.CallContext(ctx, nil, "set_ban", address, command, hexutil.Uint64(banTime), absolute, reason)
 }

@@ -171,6 +171,13 @@ type node struct {
 	Version    string         `json:"version"`
 }
 
+type bannedAddress struct {
+	Address   string         `json:"address"`
+	BanReason string         `json:"ban_reason"`
+	BanUntil  hexutil.Uint64 `json:"ban_until"`
+	CreatedAt hexutil.Uint64 `json:"created_at"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),
