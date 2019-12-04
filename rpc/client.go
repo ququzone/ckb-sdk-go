@@ -73,6 +73,16 @@ type Client interface {
 	// EstimateFeeRate Estimate a fee rate (capacity/KB) for a transaction that to be committed in expect blocks.
 	EstimateFeeRate(ctx context.Context, blocks uint64) (*types.EstimateFeeRateResult, error)
 
+	////// Indexer
+	// IndexLockHash create index for live cells and transactions by the hash of lock script.
+	IndexLockHash(ctx context.Context, lockHash types.Hash, indexFrom uint64) (*types.LockHashIndexState, error)
+
+	// GetLockHashIndexStates Get lock hash index states.
+	GetLockHashIndexStates(ctx context.Context) ([]*types.LockHashIndexState, error)
+
+	// GetLiveCellsByLockHash returns the live cells collection by the hash of lock script.
+	GetLiveCellsByLockHash(ctx context.Context, lockHash types.Hash, page uint, per uint, reverseOrder bool) ([]*types.LiveCell, error)
+
 	// Close close client
 	Close()
 }
@@ -308,4 +318,79 @@ func (cli *client) EstimateFeeRate(ctx context.Context, blocks uint64) (*types.E
 	return &types.EstimateFeeRateResult{
 		FeeRate: uint64(result.FeeRate),
 	}, err
+}
+
+func (cli *client) IndexLockHash(ctx context.Context, lockHash types.Hash, indexFrom uint64) (*types.LockHashIndexState, error) {
+	var result lockHashIndexState
+
+	err := cli.c.CallContext(ctx, &result, "index_lock_hash", lockHash, hexutil.Uint64(indexFrom))
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.LockHashIndexState{
+		BlockHash:   result.BlockHash,
+		BlockNumber: uint64(result.BlockNumber),
+		LockHash:    result.LockHash,
+	}, err
+}
+
+func (cli *client) GetLockHashIndexStates(ctx context.Context) ([]*types.LockHashIndexState, error) {
+	var result []lockHashIndexState
+
+	err := cli.c.CallContext(ctx, &result, "get_lock_hash_index_states")
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*types.LockHashIndexState, len(result))
+	for i := 0; i < len(result); i++ {
+		state := result[i]
+		ret[i] = &types.LockHashIndexState{
+			BlockHash:   state.BlockHash,
+			BlockNumber: uint64(state.BlockNumber),
+			LockHash:    state.LockHash,
+		}
+	}
+
+	return ret, err
+}
+
+func (cli *client) GetLiveCellsByLockHash(ctx context.Context, lockHash types.Hash, page uint, per uint, reverseOrder bool) ([]*types.LiveCell, error) {
+	var result []liveCell
+
+	err := cli.c.CallContext(ctx, &result, "get_live_cells_by_lock_hash", lockHash, hexutil.Uint(page), hexutil.Uint(per), reverseOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*types.LiveCell, len(result))
+
+	for i := 0; i < len(result); i++ {
+		cell := result[i]
+		ret[i] = &types.LiveCell{
+			CellOutput: &types.CellOutput{
+				Capacity: (*big.Int)(&cell.CellOutput.Capacity),
+				Lock: &types.Script{
+					CodeHash: cell.CellOutput.Lock.CodeHash,
+					HashType: cell.CellOutput.Lock.HashType,
+					Args:     cell.CellOutput.Lock.Args,
+				},
+			},
+			CreatedBy: &types.TransactionPoint{
+				BlockNumber: uint64(cell.CreatedBy.BlockNumber),
+				Index:       uint64(cell.CreatedBy.Index),
+				TxHash:      cell.CreatedBy.TxHash,
+			},
+		}
+		if cell.CellOutput.Type != nil {
+			ret[i].CellOutput.Type = &types.Script{
+				CodeHash: cell.CellOutput.Type.CodeHash,
+				HashType: cell.CellOutput.Type.HashType,
+				Args:     cell.CellOutput.Type.Args,
+			}
+		}
+	}
+
+	return ret, err
 }

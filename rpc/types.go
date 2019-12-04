@@ -137,6 +137,23 @@ type estimateFeeRateResult struct {
 	FeeRate hexutil.Uint64 `json:"fee_rate"`
 }
 
+type lockHashIndexState struct {
+	BlockHash   types.Hash     `json:"block_hash"`
+	BlockNumber hexutil.Uint64 `json:"block_number"`
+	LockHash    types.Hash     `json:"lock_hash"`
+}
+
+type transactionPoint struct {
+	BlockNumber hexutil.Uint64 `json:"block_number"`
+	Index       hexutil.Uint64 `json:"index"`
+	TxHash      types.Hash     `json:"tx_hash"`
+}
+
+type liveCell struct {
+	CellOutput cellOutput       `json:"cell_output"`
+	CreatedBy  transactionPoint `json:"created_by"`
+}
+
 func toHeader(head header) *types.Header {
 	return &types.Header{
 		CompactTarget:    uint64(head.CompactTarget),
