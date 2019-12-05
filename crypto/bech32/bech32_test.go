@@ -1,4 +1,4 @@
-package crypto
+package bech32
 
 import (
 	"encoding/hex"
