@@ -16,7 +16,7 @@ type epoch struct {
 }
 
 type header struct {
-	CompactTarget    hexutil.Uint64 `json:"compact_target"`
+	CompactTarget    hexutil.Uint   `json:"compact_target"`
 	Dao              types.Hash     `json:"dao"`
 	Epoch            hexutil.Uint64 `json:"epoch"`
 	Hash             types.Hash     `json:"hash"`
@@ -31,8 +31,8 @@ type header struct {
 }
 
 type outPoint struct {
-	TxHash types.Hash     `json:"tx_hash"`
-	Index  hexutil.Uint64 `json:"index"`
+	TxHash types.Hash   `json:"tx_hash"`
+	Index  hexutil.Uint `json:"index"`
 }
 
 type cellDep struct {
@@ -52,9 +52,9 @@ type script struct {
 }
 
 type cellOutput struct {
-	Capacity hexutil.Big `json:"capacity"`
-	Lock     *script     `json:"lock"`
-	Type     *script     `json:"type"`
+	Capacity hexutil.Uint64 `json:"capacity"`
+	Lock     *script        `json:"lock"`
+	Type     *script        `json:"type"`
 }
 
 type transaction struct {
@@ -205,7 +205,7 @@ type blockchainInfo struct {
 
 func toHeader(head header) *types.Header {
 	return &types.Header{
-		CompactTarget:    uint64(head.CompactTarget),
+		CompactTarget:    uint(head.CompactTarget),
 		Dao:              head.Dao,
 		Epoch:            uint64(head.Epoch),
 		Hash:             head.Hash,
@@ -254,7 +254,7 @@ func toOutputs(outputs []cellOutput) []*types.CellOutput {
 	for i := 0; i < len(outputs); i++ {
 		output := outputs[i]
 		result[i] = &types.CellOutput{
-			Capacity: (*big.Int)(&output.Capacity),
+			Capacity: uint64(output.Capacity),
 			Lock: &types.Script{
 				CodeHash: output.Lock.CodeHash,
 				HashType: output.Lock.HashType,
@@ -280,7 +280,7 @@ func toInputs(inputs []cellInput) []*types.CellInput {
 			Since: uint64(input.Since),
 			PreviousOutput: &types.OutPoint{
 				TxHash: input.PreviousOutput.TxHash,
-				Index:  uint64(input.PreviousOutput.Index),
+				Index:  uint(input.PreviousOutput.Index),
 			},
 		}
 	}
@@ -294,7 +294,7 @@ func toCellDeps(deps []cellDep) []*types.CellDep {
 		result[i] = &types.CellDep{
 			OutPoint: &types.OutPoint{
 				TxHash: dep.OutPoint.TxHash,
-				Index:  uint64(dep.OutPoint.Index),
+				Index:  uint(dep.OutPoint.Index),
 			},
 			DepType: dep.DepType,
 		}
@@ -336,7 +336,7 @@ func toCells(cells []cell) []*types.Cell {
 			},
 			OutPoint: &types.OutPoint{
 				TxHash: cell.OutPoint.TxHash,
-				Index:  uint64(cell.OutPoint.Index),
+				Index:  uint(cell.OutPoint.Index),
 			},
 		}
 		if cell.Type != nil {
@@ -354,7 +354,7 @@ func toCellWithStatus(status cellWithStatus) *types.CellWithStatus {
 	result := &types.CellWithStatus{
 		Cell: &types.CellInfo{
 			Output: &types.CellOutput{
-				Capacity: (*big.Int)(&status.Cell.Output.Capacity),
+				Capacity: uint64(status.Cell.Output.Capacity),
 				Lock: &types.Script{
 					CodeHash: status.Cell.Output.Lock.CodeHash,
 					HashType: status.Cell.Output.Lock.HashType,
@@ -390,7 +390,7 @@ func fromCellDeps(deps []*types.CellDep) []cellDep {
 		result[i] = cellDep{
 			OutPoint: outPoint{
 				TxHash: dep.OutPoint.TxHash,
-				Index:  hexutil.Uint64(dep.OutPoint.Index),
+				Index:  hexutil.Uint(dep.OutPoint.Index),
 			},
 			DepType: dep.DepType,
 		}
@@ -406,7 +406,7 @@ func fromInputs(inputs []*types.CellInput) []cellInput {
 			Since: hexutil.Uint64(input.Since),
 			PreviousOutput: outPoint{
 				TxHash: input.PreviousOutput.TxHash,
-				Index:  hexutil.Uint64(input.PreviousOutput.Index),
+				Index:  hexutil.Uint(input.PreviousOutput.Index),
 			},
 		}
 	}
@@ -418,7 +418,7 @@ func fromOutputs(outputs []*types.CellOutput) []cellOutput {
 	for i := 0; i < len(outputs); i++ {
 		output := outputs[i]
 		result[i] = cellOutput{
-			Capacity: (hexutil.Big)(*output.Capacity),
+			Capacity: hexutil.Uint64(output.Capacity),
 			Lock: &script{
 				CodeHash: output.Lock.CodeHash,
 				HashType: output.Lock.HashType,

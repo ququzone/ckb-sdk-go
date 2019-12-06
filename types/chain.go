@@ -28,7 +28,7 @@ type Epoch struct {
 }
 
 type Header struct {
-	CompactTarget    uint64   `json:"compact_target"`
+	CompactTarget    uint     `json:"compact_target"`
 	Dao              Hash     `json:"dao"`
 	Epoch            uint64   `json:"epoch"`
 	Hash             Hash     `json:"hash"`
@@ -43,8 +43,8 @@ type Header struct {
 }
 
 type OutPoint struct {
-	TxHash Hash   `json:"tx_hash"`
-	Index  uint64 `json:"index"`
+	TxHash Hash `json:"tx_hash"`
+	Index  uint `json:"index"`
 }
 
 type CellDep struct {
@@ -64,9 +64,9 @@ type CellInput struct {
 }
 
 type CellOutput struct {
-	Capacity *big.Int `json:"capacity"`
-	Lock     *Script  `json:"lock"`
-	Type     *Script  `json:"type"`
+	Capacity uint64  `json:"capacity"`
+	Lock     *Script `json:"lock"`
+	Type     *Script `json:"type"`
 }
 
 type Transaction struct {
