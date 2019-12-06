@@ -105,7 +105,7 @@ type Client interface {
 
 	////// Pool
 	// SendTransaction send new transaction into transaction pool.
-	SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Hash, error)
+	SendTransaction(ctx context.Context, txs []*types.Transaction) (*types.Hash, error)
 
 	// TxPoolInfo return the transaction pool information
 	TxPoolInfo(ctx context.Context) (*types.TxPoolInfo, error)
@@ -512,10 +512,15 @@ func (cli *client) SetBan(ctx context.Context, address string, command string, b
 	return cli.c.CallContext(ctx, nil, "set_ban", address, command, hexutil.Uint64(banTime), absolute, reason)
 }
 
-func (cli *client) SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Hash, error) {
+func (cli *client) SendTransaction(ctx context.Context, txs []*types.Transaction) (*types.Hash, error) {
 	var result types.Hash
 
-	err := cli.c.CallContext(ctx, &result, "send_transaction", fromTransaction(tx))
+	var req = make([]inTransaction, len(txs))
+	for i := 0; i < len(txs); i++ {
+		req[i] = fromTransaction(txs[i])
+	}
+
+	err := cli.c.CallContext(ctx, &result, "send_transaction", req)
 	if err != nil {
 		return nil, err
 	}
