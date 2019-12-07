@@ -2,6 +2,8 @@ package types
 
 import (
 	"math/big"
+
+	"github.com/ququzone/ckb-sdk-go/crypto/blake2b"
 )
 
 type ScriptHashType string
@@ -56,6 +58,20 @@ type Script struct {
 	CodeHash Hash           `json:"code_hash"`
 	HashType ScriptHashType `json:"hash_type"`
 	Args     []byte         `json:"args"`
+}
+
+func (script *Script) Hash() (Hash, error) {
+	data, err := script.Serialize()
+	if err != nil {
+		return Hash{}, err
+	}
+
+	hash, err := blake2b.Blake256(data)
+	if err != nil {
+		return Hash{}, err
+	}
+
+	return BytesToHash(hash), nil
 }
 
 type CellInput struct {

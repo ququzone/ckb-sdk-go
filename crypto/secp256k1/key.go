@@ -13,6 +13,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 
 	"github.com/ququzone/ckb-sdk-go/crypto"
+	"github.com/ququzone/ckb-sdk-go/crypto/blake2b"
+	"github.com/ququzone/ckb-sdk-go/transaction"
+	"github.com/ququzone/ckb-sdk-go/types"
 )
 
 var (
@@ -33,6 +36,30 @@ func (k *Secp256k1Key) Sign(data []byte) ([]byte, error) {
 	defer crypto.ZeroBytes(seckey)
 
 	return secp256k1.Sign(data, seckey)
+}
+
+func (k *Secp256k1Key) Script(systemScripts *transaction.SystemScripts) (*types.Script, error) {
+	pub := k.PubKey()
+
+	args, err := blake2b.Blake160(pub)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.Script{
+		CodeHash: systemScripts.SecpCell.CellHash,
+		HashType: types.HashTypeType,
+		Args:     args,
+	}, nil
+}
+
+func (k *Secp256k1Key) PubKey() []byte {
+	pub := &k.PrivateKey.PublicKey
+	if pub == nil || pub.X == nil || pub.Y == nil {
+		return nil
+	}
+
+	return secp256k1.CompressPubkey(pub.X, pub.Y)
 }
 
 func RandomNew() (*Secp256k1Key, error) {

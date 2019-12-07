@@ -254,7 +254,7 @@ func (cli *client) GetLiveCell(ctx context.Context, point *types.OutPoint, withD
 	var result cellWithStatus
 	err := cli.c.CallContext(ctx, &result, "get_live_cell", outPoint{
 		TxHash: point.TxHash,
-		Index:  hexutil.Uint64(point.Index),
+		Index:  hexutil.Uint(point.Index),
 	}, true)
 	if err != nil {
 		return nil, err
@@ -330,7 +330,7 @@ func (cli *client) DryRunTransaction(ctx context.Context, transaction *types.Tra
 
 func (cli *client) CalculateDaoMaximumWithdraw(ctx context.Context, point *types.OutPoint, hash types.Hash) (*big.Int, error) {
 	var result hexutil.Big
-	err := cli.c.CallContext(ctx, &result, "calculate_dao_maximum_withdraw", outPoint{TxHash: point.TxHash, Index: hexutil.Uint64(point.Index)}, hash)
+	err := cli.c.CallContext(ctx, &result, "calculate_dao_maximum_withdraw", outPoint{TxHash: point.TxHash, Index: hexutil.Uint(point.Index)}, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (cli *client) GetLiveCellsByLockHash(ctx context.Context, lockHash types.Ha
 		cell := result[i]
 		ret[i] = &types.LiveCell{
 			CellOutput: &types.CellOutput{
-				Capacity: (*big.Int)(&cell.CellOutput.Capacity),
+				Capacity: uint64(cell.CellOutput.Capacity),
 				Lock: &types.Script{
 					CodeHash: cell.CellOutput.Lock.CodeHash,
 					HashType: cell.CellOutput.Lock.HashType,

@@ -29,18 +29,18 @@ func (t DepType) Serialize() ([]byte, error) {
 }
 
 // Serialize script
-func (s *Script) Serialize() ([]byte, error) {
-	h, err := s.CodeHash.Serialize()
+func (script *Script) Serialize() ([]byte, error) {
+	h, err := script.CodeHash.Serialize()
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := s.HashType.Serialize()
+	t, err := script.HashType.Serialize()
 	if err != nil {
 		return nil, err
 	}
 
-	a := SerializeBytes(s.Args)
+	a := SerializeBytes(script.Args)
 
 	return SerializeTable([][]byte{h, t, a}), nil
 }
