@@ -96,6 +96,26 @@ type Transaction struct {
 	Witnesses   [][]byte      `json:"witnesses"`
 }
 
+func (t *Transaction) ComputeHash() (Hash, error) {
+	data, err := t.Serialize()
+	if err != nil {
+		return Hash{}, err
+	}
+
+	hash, err := blake2b.Blake256(data)
+	if err != nil {
+		return Hash{}, err
+	}
+
+	return BytesToHash(hash), nil
+}
+
+type WitnessArgs struct {
+	Lock       []byte `json:"lock"`
+	InputType  []byte `json:"input_type"`
+	OutputType []byte `json:"output_type"`
+}
+
 type UncleBlock struct {
 	Header    *Header `json:"header"`
 	Proposals []uint  `json:"proposals"`

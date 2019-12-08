@@ -14,8 +14,8 @@ import (
 
 	"github.com/ququzone/ckb-sdk-go/crypto"
 	"github.com/ququzone/ckb-sdk-go/crypto/blake2b"
-	"github.com/ququzone/ckb-sdk-go/transaction"
 	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
 )
 
 var (
@@ -38,7 +38,7 @@ func (k *Secp256k1Key) Sign(data []byte) ([]byte, error) {
 	return secp256k1.Sign(data, seckey)
 }
 
-func (k *Secp256k1Key) Script(systemScripts *transaction.SystemScripts) (*types.Script, error) {
+func (k *Secp256k1Key) Script(systemScripts *utils.SystemScripts) (*types.Script, error) {
 	pub := k.PubKey()
 
 	args, err := blake2b.Blake160(pub)

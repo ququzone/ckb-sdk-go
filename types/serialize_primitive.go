@@ -178,3 +178,12 @@ func SerializeOption(o Serializer) ([]byte, error) {
 
 	return o.Serialize()
 }
+
+// SerializeOption serialize option
+func SerializeOptionBytes(o []byte) ([]byte, error) {
+	if o == nil || reflect.ValueOf(o).IsNil() {
+		return []byte{}, nil
+	}
+
+	return SerializeBytes(o), nil
+}

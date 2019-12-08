@@ -1,7 +1,8 @@
-package transaction
+package utils
 
 import (
 	"context"
+
 	"github.com/ququzone/ckb-sdk-go/rpc"
 	"github.com/ququzone/ckb-sdk-go/types"
 )

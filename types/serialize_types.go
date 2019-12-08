@@ -165,3 +165,22 @@ func (t *Transaction) Serialize() ([]byte, error) {
 	fields := [][]byte{v, cdsBytes, hdsBytes, ipsBytes, opsBytes, odsBytes}
 	return SerializeTable(fields), nil
 }
+
+func (w *WitnessArgs) Serialize() ([]byte, error) {
+	l, err := SerializeOptionBytes(w.Lock)
+	if err != nil {
+		return nil, err
+	}
+
+	i, err := SerializeOptionBytes(w.InputType)
+	if err != nil {
+		return nil, err
+	}
+
+	o, err := SerializeOptionBytes(w.OutputType)
+	if err != nil {
+		return nil, err
+	}
+
+	return SerializeTable([][]byte{l, i, o}), nil
+}
