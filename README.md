@@ -14,9 +14,15 @@ Golang SDK for Nervos [CKB](https://github.com/nervosnetwork/ckb).
 |----------|-------------|-------------|
 | [Golang](https://golang.org) | &ge; 1.11.5 | Go programming language |
 
+### Install
+
+```bash
+go get -v github.com/ququzone/ckb-sdk-go
+```
+
 ## Basic Usages
 
-### 1. Single inputs send Transaction
+### 1. Single inputs send transaction
 
 ```go
 package main
