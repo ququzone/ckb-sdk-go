@@ -51,7 +51,7 @@ func AddInputsForTransaction(transaction *types.Transaction, cells []*types.Cell
 	return group, EmptyWitnessArg, nil
 }
 
-func SingleSignTransaction(transaction *types.Transaction, groud []int, witnessArgs *types.WitnessArgs, key crypto.Key) error {
+func SingleSignTransaction(transaction *types.Transaction, group []int, witnessArgs *types.WitnessArgs, key crypto.Key) error {
 	data, err := witnessArgs.Serialize()
 	if err != nil {
 		return err
@@ -66,6 +66,16 @@ func SingleSignTransaction(transaction *types.Transaction, groud []int, witnessA
 
 	message := append(hash.Bytes(), length...)
 	message = append(message, data...)
+
+	if len(group) > 1 {
+		for i := 1; i < len(group); i++ {
+			var data []byte
+			length := make([]byte, 8)
+			binary.LittleEndian.PutUint64(length, uint64(len(data)))
+			message = append(message, length...)
+			message = append(message, data...)
+		}
+	}
 
 	message, err = blake2b.Blake256(message)
 	if err != nil {
@@ -85,7 +95,7 @@ func SingleSignTransaction(transaction *types.Transaction, groud []int, witnessA
 		return err
 	}
 
-	transaction.Witnesses[groud[0]] = wab
+	transaction.Witnesses[group[0]] = wab
 
 	return nil
 }
