@@ -18,7 +18,7 @@ type SystemScripts struct {
 	DaoCell      *SystemScriptCell
 }
 
-func NewSystemScript(client rpc.Client) (*SystemScripts, error) {
+func NewSystemScripts(client rpc.Client) (*SystemScripts, error) {
 	genesis, err := client.GetBlockByNumber(context.Background(), 0)
 	if err != nil {
 		return nil, err
