@@ -22,7 +22,7 @@ go get -v github.com/ququzone/ckb-sdk-go
 
 ## Basic Usages
 
-### 1. Single inputs send transaction
+### 1. Single input send transaction
 
 ```go
 package main
@@ -91,6 +91,107 @@ func main() {
 	}
 
 	err = transaction.SingleSignTransaction(tx, group, witnessArgs, key)
+	if err != nil {
+		log.Fatalf("sign transaction error: %v", err)
+	}
+
+	hash, err := client.SendTransaction(context.Background(), tx)
+	if err != nil {
+		log.Fatalf("send transaction error: %v", err)
+	}
+
+	fmt.Println(hash.String())
+}
+```
+
+### 2. Multiple inputs send transaction
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/hex"
+	"fmt"
+	"log"
+
+	"github.com/ququzone/ckb-sdk-go/crypto/secp256k1"
+	"github.com/ququzone/ckb-sdk-go/rpc"
+	"github.com/ququzone/ckb-sdk-go/transaction"
+	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
+)
+
+func main() {
+	client, err := rpc.Dial("http://127.0.0.1:8114")
+	if err != nil {
+		log.Fatalf("create rpc client error: %v", err)
+	}
+
+	keyA, err := secp256k1.HexToKey(PRIVATE_KEY_A)
+	if err != nil {
+		log.Fatalf("import private key error: %v", err)
+	}
+
+	keyB, err := secp256k1.HexToKey(PRIVATE_KEY_B)
+	if err != nil {
+		log.Fatalf("import private key error: %v", err)
+	}
+
+	systemScripts, err := utils.NewSystemScripts(client)
+	if err != nil {
+		log.Fatalf("load system script error: %v", err)
+	}
+
+	toAddress, _ := hex.DecodeString("f96b6700df60fd6d84a2e17a5c5e4f603a5eec5d")
+
+	tx := transaction.NewSecp256k1SingleSigTx(systemScripts)
+	tx.Outputs = append(tx.Outputs, &types.CellOutput{
+		Capacity: 499999996000,
+		Lock: &types.Script{
+			CodeHash: types.HexToHash("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"),
+			HashType: types.HashTypeType,
+			Args:     toAddress,
+		},
+	})
+	tx.OutputsData = [][]byte{{}}
+
+	groupB, witnessArgsB, err := transaction.AddInputsForTransaction(tx, []*types.Cell{
+		{
+			OutPoint: &types.OutPoint{
+				TxHash: types.HexToHash("0xf56d73acbe235889e726366aa4fa09b3f0b51138c294645bb30912fb872837a5"),
+				Index:  0,
+			},
+		},
+		{
+			OutPoint: &types.OutPoint{
+				TxHash: types.HexToHash("0x8e6d818c6e07e6cbd9fca51294030494ee23dc388d7f5276ba50b938d02cc015"),
+				Index:  0,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("add inputs to transaction error: %v", err)
+	}
+
+	groupA, witnessArgsA, err := transaction.AddInputsForTransaction(tx, []*types.Cell{
+		{
+			OutPoint: &types.OutPoint{
+				TxHash: types.HexToHash("0xf56d73acbe235889e726366aa4fa09b3f0b51138c294645bb30912fb872837a5"),
+				Index:  1,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("add inputs to transaction error: %v", err)
+	}
+
+	err = transaction.SingleSignTransaction(tx, groupB, witnessArgsB, keyB)
+	if err != nil {
+		log.Fatalf("sign transaction error: %v", err)
+	}
+
+	err = transaction.SingleSignTransaction(tx, groupA, witnessArgsA, keyA)
 	if err != nil {
 		log.Fatalf("sign transaction error: %v", err)
 	}
