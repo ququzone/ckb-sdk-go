@@ -10,11 +10,14 @@ import (
 	"github.com/ququzone/ckb-sdk-go/utils"
 )
 
-var EmptyWitnessArg = &types.WitnessArgs{
-	Lock:       make([]byte, 65),
-	InputType:  nil,
-	OutputType: nil,
-}
+var (
+	EmptyWitnessArg = &types.WitnessArgs{
+		Lock:       make([]byte, 65),
+		InputType:  nil,
+		OutputType: nil,
+	}
+	SignaturePlaceholder = make([]byte, 65)
+)
 
 func NewSecp256k1SingleSigTx(scripts *utils.SystemScripts) *types.Transaction {
 	return &types.Transaction{
@@ -23,6 +26,37 @@ func NewSecp256k1SingleSigTx(scripts *utils.SystemScripts) *types.Transaction {
 		CellDeps: []*types.CellDep{
 			{
 				OutPoint: scripts.SecpCell.OutPoint,
+				DepType:  types.DepTypeDepGroup,
+			},
+		},
+	}
+}
+
+func NewSecp256k1MultiSigTx(scripts *utils.SystemScripts) *types.Transaction {
+	return &types.Transaction{
+		Version:    0,
+		HeaderDeps: []types.Hash{},
+		CellDeps: []*types.CellDep{
+			{
+				OutPoint: scripts.MultiSigCell.OutPoint,
+				DepType:  types.DepTypeDepGroup,
+			},
+		},
+	}
+}
+
+func NewSecp256k1HybirdSigTx(scripts *utils.SystemScripts) *types.Transaction {
+	return &types.Transaction{
+		Version:    0,
+		HeaderDeps: []types.Hash{},
+		CellDeps: []*types.CellDep{
+
+			{
+				OutPoint: scripts.SecpCell.OutPoint,
+				DepType:  types.DepTypeDepGroup,
+			},
+			{
+				OutPoint: scripts.MultiSigCell.OutPoint,
 				DepType:  types.DepTypeDepGroup,
 			},
 		},
@@ -82,13 +116,72 @@ func SingleSignTransaction(transaction *types.Transaction, group []int, witnessA
 		return err
 	}
 
-	signd, err := key.Sign(message)
+	signed, err := key.Sign(message)
 	if err != nil {
 		return err
 	}
 
 	wa := &types.WitnessArgs{
-		Lock: signd,
+		Lock: signed,
+	}
+	wab, err := wa.Serialize()
+	if err != nil {
+		return err
+	}
+
+	transaction.Witnesses[group[0]] = wab
+
+	return nil
+}
+
+func MultiSignTransaction(transaction *types.Transaction, group []int, witnessArgs *types.WitnessArgs, serialize []byte, keys ...crypto.Key) error {
+	var emptySignature []byte
+	for range keys {
+		emptySignature = append(emptySignature, SignaturePlaceholder...)
+	}
+	witnessArgs.Lock = append(serialize, emptySignature...)
+
+	data, err := witnessArgs.Serialize()
+	if err != nil {
+		return err
+	}
+	length := make([]byte, 8)
+	binary.LittleEndian.PutUint64(length, uint64(len(data)))
+
+	hash, err := transaction.ComputeHash()
+	if err != nil {
+		return err
+	}
+
+	message := append(hash.Bytes(), length...)
+	message = append(message, data...)
+
+	if len(group) > 1 {
+		for i := 1; i < len(group); i++ {
+			var data []byte
+			length := make([]byte, 8)
+			binary.LittleEndian.PutUint64(length, uint64(len(data)))
+			message = append(message, length...)
+			message = append(message, data...)
+		}
+	}
+
+	message, err = blake2b.Blake256(message)
+	if err != nil {
+		return err
+	}
+
+	var signed []byte
+	for _, key := range keys {
+		s, err := key.Sign(message)
+		if err != nil {
+			return err
+		}
+		signed = append(signed, s...)
+	}
+
+	wa := &types.WitnessArgs{
+		Lock: append(serialize, signed...),
 	}
 	wab, err := wa.Serialize()
 	if err != nil {
