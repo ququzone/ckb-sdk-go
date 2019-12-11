@@ -410,7 +410,7 @@ func (cli *client) GetLiveCellsByLockHash(ctx context.Context, lockHash types.Ha
 			},
 			CreatedBy: &types.TransactionPoint{
 				BlockNumber: uint64(cell.CreatedBy.BlockNumber),
-				Index:       uint64(cell.CreatedBy.Index),
+				Index:       uint(cell.CreatedBy.Index),
 				TxHash:      cell.CreatedBy.TxHash,
 			},
 		}
@@ -441,14 +441,14 @@ func (cli *client) GetTransactionsByLockHash(ctx context.Context, lockHash types
 		ret[i] = &types.CellTransaction{
 			CreatedBy: &types.TransactionPoint{
 				BlockNumber: uint64(tx.CreatedBy.BlockNumber),
-				Index:       uint64(tx.CreatedBy.Index),
+				Index:       uint(tx.CreatedBy.Index),
 				TxHash:      tx.CreatedBy.TxHash,
 			},
 		}
 		if tx.ConsumedBy != nil {
 			ret[i].ConsumedBy = &types.TransactionPoint{
 				BlockNumber: uint64(tx.ConsumedBy.BlockNumber),
-				Index:       uint64(tx.ConsumedBy.Index),
+				Index:       uint(tx.ConsumedBy.Index),
 				TxHash:      tx.ConsumedBy.TxHash,
 			}
 		}

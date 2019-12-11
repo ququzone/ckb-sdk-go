@@ -91,11 +91,11 @@ type block struct {
 }
 
 type cell struct {
-	BlockHash types.Hash  `json:"block_hash"`
-	Capacity  hexutil.Big `json:"capacity"`
-	Lock      *script     `json:"lock"`
-	OutPoint  *outPoint   `json:"out_point"`
-	Type      *script     `json:"type"`
+	BlockHash types.Hash     `json:"block_hash"`
+	Capacity  hexutil.Uint64 `json:"capacity"`
+	Lock      *script        `json:"lock"`
+	OutPoint  *outPoint      `json:"out_point"`
+	Type      *script        `json:"type"`
 }
 
 type cellData struct {
@@ -145,7 +145,7 @@ type lockHashIndexState struct {
 
 type transactionPoint struct {
 	BlockNumber hexutil.Uint64 `json:"block_number"`
-	Index       hexutil.Uint64 `json:"index"`
+	Index       hexutil.Uint   `json:"index"`
 	TxHash      types.Hash     `json:"tx_hash"`
 }
 
@@ -328,7 +328,7 @@ func toCells(cells []cell) []*types.Cell {
 		cell := cells[i]
 		result[i] = &types.Cell{
 			BlockHash: cell.BlockHash,
-			Capacity:  (*big.Int)(&cell.Capacity),
+			Capacity:  uint64(cell.Capacity),
 			Lock: &types.Script{
 				CodeHash: cell.Lock.CodeHash,
 				HashType: cell.Lock.HashType,
