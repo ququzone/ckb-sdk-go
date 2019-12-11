@@ -28,7 +28,7 @@ func TestGenerateSecp256k1MultisigScript(t *testing.T) {
 	}
 	publicKeys = append(publicKeys, key)
 
-	script, err := GenerateSecp256k1MultisigScript(0, 2, publicKeys)
+	script, _, err := GenerateSecp256k1MultisigScript(0, 2, publicKeys)
 	if err != nil {
 		assert.Error(t, err)
 	}
