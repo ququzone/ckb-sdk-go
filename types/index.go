@@ -8,7 +8,7 @@ type LockHashIndexState struct {
 
 type TransactionPoint struct {
 	BlockNumber uint64 `json:"block_number"`
-	Index       uint64 `json:"index"`
+	Index       uint   `json:"index"`
 	TxHash      Hash   `json:"tx_hash"`
 }
 
