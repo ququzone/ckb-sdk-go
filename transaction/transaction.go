@@ -45,6 +45,24 @@ func NewSecp256k1MultiSigTx(scripts *utils.SystemScripts) *types.Transaction {
 	}
 }
 
+func NewSecp256k1HybirdSigTx(scripts *utils.SystemScripts) *types.Transaction {
+	return &types.Transaction{
+		Version:    0,
+		HeaderDeps: []types.Hash{},
+		CellDeps: []*types.CellDep{
+
+			{
+				OutPoint: scripts.SecpCell.OutPoint,
+				DepType:  types.DepTypeDepGroup,
+			},
+			{
+				OutPoint: scripts.MultiSigCell.OutPoint,
+				DepType:  types.DepTypeDepGroup,
+			},
+		},
+	}
+}
+
 func AddInputsForTransaction(transaction *types.Transaction, cells []*types.Cell) ([]int, *types.WitnessArgs, error) {
 	if len(cells) == 0 {
 		return nil, nil, errors.New("input cells empty")
