@@ -130,7 +130,7 @@ type Block struct {
 
 type Cell struct {
 	BlockHash Hash      `json:"block_hash"`
-	Capacity  *big.Int  `json:"capacity"`
+	Capacity  uint64    `json:"capacity"`
 	Lock      *Script   `json:"lock"`
 	OutPoint  *OutPoint `json:"out_point"`
 	Type      *Script   `json:"type"`
