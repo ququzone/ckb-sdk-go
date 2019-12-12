@@ -1,4 +1,4 @@
-package utils
+package payment
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/ququzone/ckb-sdk-go/rpc"
 	"github.com/ququzone/ckb-sdk-go/transaction"
 	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
 )
 
 type Payment struct {
@@ -26,7 +27,7 @@ func NewPayment(from, to string, amount, fee uint64) (*Payment, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse from address %s error: %v", from, err)
 	}
-	toAddress, err := address.Parse(from)
+	toAddress, err := address.Parse(to)
 	if err != nil {
 		return nil, fmt.Errorf("parse to address %s error: %v", to, err)
 	}
@@ -44,7 +45,7 @@ func NewPayment(from, to string, amount, fee uint64) (*Payment, error) {
 }
 
 func (p *Payment) GenerateTx(client rpc.Client) (*types.Transaction, error) {
-	collector := NewCellCollector(client, p.From, p.Amount+p.Fee)
+	collector := utils.NewCellCollector(client, p.From, p.Amount+p.Fee)
 
 	cells, total, err := collector.Collect()
 	if err != nil {
@@ -55,7 +56,7 @@ func (p *Payment) GenerateTx(client rpc.Client) (*types.Transaction, error) {
 		return nil, fmt.Errorf("insufficient balance: %d", total)
 	}
 
-	systemScripts, err := NewSystemScripts(client)
+	systemScripts, err := utils.NewSystemScripts(client)
 	if err != nil {
 		return nil, fmt.Errorf("load system script error: %v", err)
 	}
