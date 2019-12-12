@@ -391,3 +391,50 @@ func main() {
 	fmt.Println(hash.String())
 }
 ```
+
+### 5. Collect cells
+
+```go
+package main
+
+import (
+	"encoding/hex"
+	"fmt"
+	"log"
+
+	"github.com/ququzone/ckb-sdk-go/rpc"
+	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
+)
+
+func main() {
+	client, err := rpc.Dial("http://127.0.0.1:8114")
+	if err != nil {
+		log.Fatalf("create rpc client error: %v", err)
+	}
+
+	args, _ := hex.DecodeString("6407c2ef9bd96e8e14ac4cd15d860e9331802172")
+
+	collector := utils.NewCellCollector(client, &types.Script{
+		CodeHash: types.HexToHash("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"),
+		HashType: types.HashTypeType,
+		Args:     args,
+	}, 10000000000000000)
+
+	// default collect null type script
+	fmt.Println(collector.Collect())
+
+	// collect by type script
+	collector.TypeScript = &types.Script{
+		CodeHash: types.HexToHash("0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e"),
+		HashType: types.HashTypeType,
+		Args:     []byte{},
+	}
+
+	cells, total, err := collector.Collect()
+
+	fmt.Println(total)
+	fmt.Println(err)
+	fmt.Println(cells)
+}
+```
