@@ -438,3 +438,50 @@ func main() {
 	fmt.Println(cells)
 }
 ```
+
+### 6. Payment
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/ququzone/ckb-sdk-go/crypto/secp256k1"
+	"github.com/ququzone/ckb-sdk-go/payment"
+	"github.com/ququzone/ckb-sdk-go/rpc"
+)
+
+func main() {
+	client, err := rpc.Dial("http://127.0.0.1:8114")
+	if err != nil {
+		log.Fatalf("create rpc client error: %v", err)
+	}
+
+	key, err := secp256k1.HexToKey(PRIVATE_KEY)
+	if err != nil {
+		log.Fatalf("import private key error: %v", err)
+	}
+
+	pay, err := payment.NewPayment("ckt1qyqwmndf2yl6qvxwgvyw9yj95gkqytgygwasdjf6hm",
+		"ckt1qyqt705jmfy3r7jlvg88k87j0sksmhgduazq7x5l8k", 100000000000, 1000)
+	if err != nil {
+		log.Fatalf("create payment error: %v", err)
+	}
+
+	_, err = pay.GenerateTx(client)
+	if err != nil {
+		log.Fatalf("create transaction error: %v", err)
+	}
+
+	_, err = pay.Sign(key)
+	if err != nil {
+		log.Fatalf("sign transaction error: %v", err)
+	}
+
+	hash, err := pay.Send(client)
+
+	fmt.Println(hash)
+}
+```
