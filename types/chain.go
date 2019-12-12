@@ -2,6 +2,7 @@ package types
 
 import (
 	"math/big"
+	"reflect"
 
 	"github.com/ququzone/ckb-sdk-go/crypto/blake2b"
 )
@@ -72,6 +73,14 @@ func (script *Script) Hash() (Hash, error) {
 	}
 
 	return BytesToHash(hash), nil
+}
+
+func (script *Script) Equals(obj *Script) bool {
+	if obj == nil {
+		return false
+	}
+
+	return reflect.DeepEqual(script, obj)
 }
 
 type CellInput struct {
