@@ -485,3 +485,77 @@ func main() {
 	fmt.Println(hash)
 }
 ```
+
+### 7. Dao deposit
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/ququzone/ckb-sdk-go/address"
+	"github.com/ququzone/ckb-sdk-go/crypto/secp256k1"
+	"github.com/ququzone/ckb-sdk-go/dao"
+	"github.com/ququzone/ckb-sdk-go/rpc"
+	"github.com/ququzone/ckb-sdk-go/transaction"
+	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
+)
+
+func main() {
+	client, err := rpc.Dial("http://127.0.0.1:8114")
+	if err != nil {
+		log.Fatalf("create rpc client error: %v", err)
+	}
+
+	key, err := secp256k1.HexToKey(PRIVATE_KEY)
+	if err != nil {
+		log.Fatalf("import private key error: %v", err)
+	}
+
+	systemScripts, err := utils.NewSystemScripts(client)
+	if err != nil {
+		log.Fatalf("load system script error: %v", err)
+	}
+
+	deposit := dao.NewDeposit(systemScripts, false)
+
+	to, _ := address.Parse("ckt1qyqwmndf2yl6qvxwgvyw9yj95gkqytgygwasdjf6hm")
+	change, _ := key.Script(systemScripts)
+
+	err = deposit.AddDaoOutput(systemScripts, to.Script, 400000000000)
+	if err != nil {
+		log.Fatalf("add dao output error: %v", err)
+	}
+	err = deposit.AddOutput(change, 99999997000)
+	if err != nil {
+		log.Fatalf("add output error: %v", err)
+	}
+
+	group, witnessArgs, err := transaction.AddInputsForTransaction(deposit.Transaction, []*types.Cell{
+		{
+			OutPoint: &types.OutPoint{
+				TxHash: types.HexToHash("0xaa10f51bc6ee60e851d17e3fffefc950d6dc1d2cd77e15699c3da5e837219764"),
+				Index:  1,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("add inputs to transaction error: %v", err)
+	}
+
+	err = transaction.SingleSignTransaction(deposit.Transaction, group, witnessArgs, key)
+	if err != nil {
+		log.Fatalf("sign transaction error: %v", err)
+	}
+
+	hash, err := client.SendTransaction(context.Background(), deposit.Transaction)
+	if err != nil {
+		log.Fatalf("send transaction error: %v", err)
+	}
+	fmt.Println(hash.String())
+}
+```
