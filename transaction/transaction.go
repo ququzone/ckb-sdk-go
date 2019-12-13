@@ -25,7 +25,7 @@ func NewSecp256k1SingleSigTx(scripts *utils.SystemScripts) *types.Transaction {
 		HeaderDeps: []types.Hash{},
 		CellDeps: []*types.CellDep{
 			{
-				OutPoint: scripts.SecpCell.OutPoint,
+				OutPoint: scripts.SecpSingleSigCell.OutPoint,
 				DepType:  types.DepTypeDepGroup,
 			},
 		},
@@ -38,7 +38,7 @@ func NewSecp256k1MultiSigTx(scripts *utils.SystemScripts) *types.Transaction {
 		HeaderDeps: []types.Hash{},
 		CellDeps: []*types.CellDep{
 			{
-				OutPoint: scripts.MultiSigCell.OutPoint,
+				OutPoint: scripts.SecpMultiSigCell.OutPoint,
 				DepType:  types.DepTypeDepGroup,
 			},
 		},
@@ -52,11 +52,11 @@ func NewSecp256k1HybirdSigTx(scripts *utils.SystemScripts) *types.Transaction {
 		CellDeps: []*types.CellDep{
 
 			{
-				OutPoint: scripts.SecpCell.OutPoint,
+				OutPoint: scripts.SecpSingleSigCell.OutPoint,
 				DepType:  types.DepTypeDepGroup,
 			},
 			{
-				OutPoint: scripts.MultiSigCell.OutPoint,
+				OutPoint: scripts.SecpMultiSigCell.OutPoint,
 				DepType:  types.DepTypeDepGroup,
 			},
 		},
