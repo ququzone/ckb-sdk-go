@@ -13,9 +13,9 @@ type SystemScriptCell struct {
 }
 
 type SystemScripts struct {
-	SecpCell     *SystemScriptCell
-	MultiSigCell *SystemScriptCell
-	DaoCell      *SystemScriptCell
+	SecpSingleSigCell *SystemScriptCell
+	SecpMultiSigCell  *SystemScriptCell
+	DaoCell           *SystemScriptCell
 }
 
 func NewSystemScripts(client rpc.Client) (*SystemScripts, error) {
@@ -38,14 +38,14 @@ func NewSystemScripts(client rpc.Client) (*SystemScripts, error) {
 	}
 
 	return &SystemScripts{
-		SecpCell: &SystemScriptCell{
+		SecpSingleSigCell: &SystemScriptCell{
 			CellHash: secpHash,
 			OutPoint: &types.OutPoint{
 				TxHash: genesis.Transactions[1].Hash,
 				Index:  0,
 			},
 		},
-		MultiSigCell: &SystemScriptCell{
+		SecpMultiSigCell: &SystemScriptCell{
 			CellHash: multiSigHash,
 			OutPoint: &types.OutPoint{
 				TxHash: genesis.Transactions[1].Hash,
