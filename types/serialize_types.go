@@ -52,7 +52,7 @@ func (o *OutPoint) Serialize() ([]byte, error) {
 		return nil, err
 	}
 
-	i := serializeUint(o.Index)
+	i := SerializeUint(o.Index)
 
 	b := new(bytes.Buffer)
 
@@ -64,7 +64,7 @@ func (o *OutPoint) Serialize() ([]byte, error) {
 
 // Serialize cell input
 func (i *CellInput) Serialize() ([]byte, error) {
-	s := serializeUint64(i.Since)
+	s := SerializeUint64(i.Since)
 
 	o, err := i.PreviousOutput.Serialize()
 	if err != nil {
@@ -76,7 +76,7 @@ func (i *CellInput) Serialize() ([]byte, error) {
 
 // Serialize cell output
 func (o *CellOutput) Serialize() ([]byte, error) {
-	c := serializeUint64(o.Capacity)
+	c := SerializeUint64(o.Capacity)
 
 	l, err := o.Lock.Serialize()
 	if err != nil {
@@ -108,7 +108,7 @@ func (d *CellDep) Serialize() ([]byte, error) {
 
 // Serialize transaction
 func (t *Transaction) Serialize() ([]byte, error) {
-	v := serializeUint(t.Version)
+	v := SerializeUint(t.Version)
 
 	// Ok, no way around this
 	deps := make([]Serializer, len(t.CellDeps))
