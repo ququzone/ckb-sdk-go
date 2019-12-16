@@ -653,7 +653,7 @@ func main() {
 }
 ```
 
-### 8. Dao withdraw phase2
+### 9. Dao withdraw phase2
 
 ```go
 package main
