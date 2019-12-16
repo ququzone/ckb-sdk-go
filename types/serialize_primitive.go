@@ -12,14 +12,14 @@ type Serializer interface {
 	Serialize() ([]byte, error)
 }
 
-func serializeUint(n uint) []byte {
+func SerializeUint(n uint) []byte {
 	b := make([]byte, u32Size)
 	binary.LittleEndian.PutUint32(b, uint32(n))
 
 	return b
 }
 
-func serializeUint64(n uint64) []byte {
+func SerializeUint64(n uint64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, n)
 
@@ -62,7 +62,7 @@ func SerializeBytes(items []byte) []byte {
 		return []byte{00, 00, 00, 00}
 	}
 
-	l := serializeUint(uint(len(items)))
+	l := SerializeUint(uint(len(items)))
 
 	b := new(bytes.Buffer)
 
@@ -82,7 +82,7 @@ func SerializeFixVec(items [][]byte) []byte {
 		return []byte{00, 00, 00, 00}
 	}
 
-	l := serializeUint(uint(len(items)))
+	l := SerializeUint(uint(len(items)))
 
 	b := new(bytes.Buffer)
 
@@ -106,7 +106,7 @@ func SerializeDynVec(items [][]byte) []byte {
 
 	// Empty dyn vector, just return size's bytes
 	if len(items) == 0 {
-		return serializeUint(size)
+		return SerializeUint(size)
 	}
 
 	offsets := make([]uint, len(items))
@@ -123,10 +123,10 @@ func SerializeDynVec(items [][]byte) []byte {
 
 	b := new(bytes.Buffer)
 
-	b.Write(serializeUint(size))
+	b.Write(SerializeUint(size))
 
 	for i := 0; i < len(items); i++ {
-		b.Write(serializeUint(offsets[i]))
+		b.Write(SerializeUint(offsets[i]))
 	}
 
 	for i := 0; i < len(items); i++ {
@@ -157,10 +157,10 @@ func SerializeTable(fields [][]byte) []byte {
 
 	b := new(bytes.Buffer)
 
-	b.Write(serializeUint(size))
+	b.Write(SerializeUint(size))
 
 	for i := 0; i < len(fields); i++ {
-		b.Write(serializeUint(offsets[i]))
+		b.Write(SerializeUint(offsets[i]))
 	}
 
 	for i := 0; i < len(fields); i++ {

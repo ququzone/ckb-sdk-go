@@ -485,3 +485,278 @@ func main() {
 	fmt.Println(hash)
 }
 ```
+
+### 7. Dao deposit
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/ququzone/ckb-sdk-go/address"
+	"github.com/ququzone/ckb-sdk-go/crypto/secp256k1"
+	"github.com/ququzone/ckb-sdk-go/dao"
+	"github.com/ququzone/ckb-sdk-go/rpc"
+	"github.com/ququzone/ckb-sdk-go/transaction"
+	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
+)
+
+func main() {
+	client, err := rpc.Dial("http://127.0.0.1:8114")
+	if err != nil {
+		log.Fatalf("create rpc client error: %v", err)
+	}
+
+	key, err := secp256k1.HexToKey(PRIVATE_KEY)
+	if err != nil {
+		log.Fatalf("import private key error: %v", err)
+	}
+
+	systemScripts, err := utils.NewSystemScripts(client)
+	if err != nil {
+		log.Fatalf("load system script error: %v", err)
+	}
+
+	deposit := dao.NewDeposit(systemScripts, false)
+
+	to, _ := address.Parse("ckt1qyqwmndf2yl6qvxwgvyw9yj95gkqytgygwasdjf6hm")
+	change, _ := key.Script(systemScripts)
+
+	err = deposit.AddDaoOutput(systemScripts, to.Script, 400000000000)
+	if err != nil {
+		log.Fatalf("add dao output error: %v", err)
+	}
+	err = deposit.AddOutput(change, 99999997000)
+	if err != nil {
+		log.Fatalf("add output error: %v", err)
+	}
+
+	group, witnessArgs, err := transaction.AddInputsForTransaction(deposit.Transaction, []*types.Cell{
+		{
+			OutPoint: &types.OutPoint{
+				TxHash: types.HexToHash("0xaa10f51bc6ee60e851d17e3fffefc950d6dc1d2cd77e15699c3da5e837219764"),
+				Index:  1,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("add inputs to transaction error: %v", err)
+	}
+
+	err = transaction.SingleSignTransaction(deposit.Transaction, group, witnessArgs, key)
+	if err != nil {
+		log.Fatalf("sign transaction error: %v", err)
+	}
+
+	hash, err := client.SendTransaction(context.Background(), deposit.Transaction)
+	if err != nil {
+		log.Fatalf("send transaction error: %v", err)
+	}
+	fmt.Println(hash.String())
+}
+```
+
+### 8. Dao withdraw Phase1
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/ququzone/ckb-sdk-go/address"
+	"github.com/ququzone/ckb-sdk-go/crypto/secp256k1"
+	"github.com/ququzone/ckb-sdk-go/dao"
+	"github.com/ququzone/ckb-sdk-go/rpc"
+	"github.com/ququzone/ckb-sdk-go/transaction"
+	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
+)
+
+func main() {
+	client, err := rpc.Dial("http://127.0.0.1:8114")
+	if err != nil {
+		log.Fatalf("create rpc client error: %v", err)
+	}
+
+	key, err := secp256k1.HexToKey(PRIVATE_KEY)
+	if err != nil {
+		log.Fatalf("import private key error: %v", err)
+	}
+
+	systemScripts, err := utils.NewSystemScripts(client)
+	if err != nil {
+		log.Fatalf("load system script error: %v", err)
+	}
+
+	withdraw := dao.NewWithdrawPhase1(systemScripts, false)
+
+	ownder, _ := address.Parse("ckt1qyqwmndf2yl6qvxwgvyw9yj95gkqytgygwasdjf6hm")
+	change, _ := key.Script(systemScripts)
+
+	index, err := withdraw.AddDaoDepositTick(client, &types.Cell{
+		BlockHash: types.HexToHash("0x386bafd53bade6bf769c9b10f545e31ea744cb6ebc5f1c8178f307e8dce157a6"),
+		Capacity:  400000000000,
+		Lock:      ownder.Script,
+		Type: &types.Script{
+			CodeHash: types.HexToHash("0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e"),
+			HashType: types.HashTypeType,
+			Args:     []byte{},
+		},
+		OutPoint: &types.OutPoint{
+			TxHash: types.HexToHash("0xc8cfe3d09b0a50fd2df3bd79dbadca23b7eb1f58087942d7266abea93459fce1"),
+			Index:  0,
+		},
+	})
+	if err != nil {
+		log.Fatalf("add dao deposit tick error: %v", err)
+	}
+
+	err = withdraw.AddOutput(change, 99999995000)
+	if err != nil {
+		log.Fatalf("add output error: %v", err)
+	}
+
+	group, witnessArgs, err := transaction.AddInputsForTransaction(withdraw.Transaction, []*types.Cell{
+		{
+			OutPoint: &types.OutPoint{
+				TxHash: types.HexToHash("0xc8cfe3d09b0a50fd2df3bd79dbadca23b7eb1f58087942d7266abea93459fce1"),
+				Index:  1,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("add inputs to transaction error: %v", err)
+	}
+
+	var groups []int
+	groups = append(groups, index)
+	groups = append(groups, group...)
+
+	// sign dao input
+	err = transaction.SingleSignTransaction(withdraw.Transaction, groups, witnessArgs, key)
+	if err != nil {
+		log.Fatalf("sign dao transaction error: %v", err)
+	}
+
+	hash, err := client.SendTransaction(context.Background(), withdraw.Transaction)
+	if err != nil {
+		log.Fatalf("send transaction error: %v", err)
+	}
+	fmt.Println(hash.String())
+}
+```
+
+### 9. Dao withdraw phase2
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/ququzone/ckb-sdk-go/address"
+	"github.com/ququzone/ckb-sdk-go/crypto/secp256k1"
+	"github.com/ququzone/ckb-sdk-go/dao"
+	"github.com/ququzone/ckb-sdk-go/rpc"
+	"github.com/ququzone/ckb-sdk-go/transaction"
+	"github.com/ququzone/ckb-sdk-go/types"
+	"github.com/ququzone/ckb-sdk-go/utils"
+)
+
+func main() {
+	client, err := rpc.Dial("http://127.0.0.1:8114")
+	if err != nil {
+		log.Fatalf("create rpc client error: %v", err)
+	}
+
+	key, err := secp256k1.HexToKey(PRIVATE_KEY)
+	if err != nil {
+		log.Fatalf("import private key error: %v", err)
+	}
+
+	systemScripts, err := utils.NewSystemScripts(client)
+	if err != nil {
+		log.Fatalf("load system script error: %v", err)
+	}
+
+	withdraw := dao.NewWithdrawPhase2(systemScripts, false)
+
+	ownder, _ := address.Parse("ckt1qyqwmndf2yl6qvxwgvyw9yj95gkqytgygwasdjf6hm")
+	change, _ := key.Script(systemScripts)
+
+	index, headerIndex, err := withdraw.AddDaoWithdrawTick(client, &types.Cell{
+		BlockHash: types.HexToHash("0x386bafd53bade6bf769c9b10f545e31ea744cb6ebc5f1c8178f307e8dce157a6"),
+		Capacity:  400000000000,
+		Lock:      ownder.Script,
+		Type: &types.Script{
+			CodeHash: types.HexToHash("0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e"),
+			HashType: types.HashTypeType,
+			Args:     []byte{},
+		},
+		OutPoint: &types.OutPoint{
+			TxHash: types.HexToHash("0xc8cfe3d09b0a50fd2df3bd79dbadca23b7eb1f58087942d7266abea93459fce1"),
+			Index:  0,
+		},
+	}, &types.Cell{
+		BlockHash: types.HexToHash("0xf0b88e5ca0397c761dc76fa2dd953f203b90c47a7c8199b45ac0d90efb044233"),
+		Capacity:  400000000000,
+		Lock:      ownder.Script,
+		Type: &types.Script{
+			CodeHash: types.HexToHash("0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e"),
+			HashType: types.HashTypeType,
+			Args:     []byte{},
+		},
+		OutPoint: &types.OutPoint{
+			TxHash: types.HexToHash("0xc72d7bffcc3302f8267fecb103f655e63e7b94b6f6e863cd6a0130ffec296684"),
+			Index:  0,
+		},
+	})
+	if err != nil {
+		log.Fatalf("add dao deposit tick error: %v", err)
+	}
+
+	err = withdraw.AddOutput(change, 99999993000)
+	if err != nil {
+		log.Fatalf("add output error: %v", err)
+	}
+
+	group, witnessArgs, err := transaction.AddInputsForTransaction(withdraw.Transaction, []*types.Cell{
+		{
+			OutPoint: &types.OutPoint{
+				TxHash: types.HexToHash("0xc72d7bffcc3302f8267fecb103f655e63e7b94b6f6e863cd6a0130ffec296684"),
+				Index:  1,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("add inputs to transaction error: %v", err)
+	}
+
+	var groups []int
+	groups = append(groups, index)
+	groups = append(groups, group...)
+
+	// sign dao input
+	err = transaction.SingleSignTransaction(withdraw.Transaction, groups, witnessArgs, key)
+	if err != nil {
+		log.Fatalf("sign dao transaction error: %v", err)
+	}
+
+	withdraw.Transaction.Witnesses[index] = append(withdraw.Transaction.Witnesses[index], types.SerializeUint64(headerIndex)...)
+
+	hash, err := client.SendTransaction(context.Background(), withdraw.Transaction)
+	if err != nil {
+		log.Fatalf("send transaction error: %v", err)
+	}
+	fmt.Println(hash.String())
+}
+```
