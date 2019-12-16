@@ -68,7 +68,7 @@ type Client interface {
 	DryRunTransaction(ctx context.Context, transaction *types.Transaction) (*types.DryRunTransactionResult, error)
 
 	// CalculateDaoMaximumWithdraw calculate the maximum withdraw one can get, given a referenced DAO cell, and a withdraw block hash.
-	CalculateDaoMaximumWithdraw(ctx context.Context, point *types.OutPoint, hash types.Hash) (*big.Int, error)
+	CalculateDaoMaximumWithdraw(ctx context.Context, point *types.OutPoint, hash types.Hash) (uint64, error)
 
 	// EstimateFeeRate Estimate a fee rate (capacity/KB) for a transaction that to be committed in expect blocks.
 	EstimateFeeRate(ctx context.Context, blocks uint64) (*types.EstimateFeeRateResult, error)
@@ -328,14 +328,14 @@ func (cli *client) DryRunTransaction(ctx context.Context, transaction *types.Tra
 	}, err
 }
 
-func (cli *client) CalculateDaoMaximumWithdraw(ctx context.Context, point *types.OutPoint, hash types.Hash) (*big.Int, error) {
-	var result hexutil.Big
+func (cli *client) CalculateDaoMaximumWithdraw(ctx context.Context, point *types.OutPoint, hash types.Hash) (uint64, error) {
+	var result hexutil.Uint64
 	err := cli.c.CallContext(ctx, &result, "calculate_dao_maximum_withdraw", outPoint{TxHash: point.TxHash, Index: hexutil.Uint(point.Index)}, hash)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	return (*big.Int)(&result), err
+	return uint64(result), err
 }
 
 func (cli *client) EstimateFeeRate(ctx context.Context, blocks uint64) (*types.EstimateFeeRateResult, error) {
