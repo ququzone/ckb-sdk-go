@@ -691,9 +691,8 @@ func main() {
 	withdraw := dao.NewWithdrawPhase2(systemScripts, false)
 
 	ownder, _ := address.Parse("ckt1qyqwmndf2yl6qvxwgvyw9yj95gkqytgygwasdjf6hm")
-	change, _ := key.Script(systemScripts)
 
-	index, headerIndex, err := withdraw.AddDaoWithdrawTick(client, &types.Cell{
+	index, witnessArgs, err := withdraw.AddDaoWithdrawTick(client, &types.Cell{
 		BlockHash: types.HexToHash("0x386bafd53bade6bf769c9b10f545e31ea744cb6ebc5f1c8178f307e8dce157a6"),
 		Capacity:  400000000000,
 		Lock:      ownder.Script,
@@ -719,39 +718,16 @@ func main() {
 			TxHash: types.HexToHash("0xc72d7bffcc3302f8267fecb103f655e63e7b94b6f6e863cd6a0130ffec296684"),
 			Index:  0,
 		},
-	})
+	}, 2000)
 	if err != nil {
 		log.Fatalf("add dao deposit tick error: %v", err)
 	}
 
-	err = withdraw.AddOutput(change, 99999993000)
-	if err != nil {
-		log.Fatalf("add output error: %v", err)
-	}
-
-	group, witnessArgs, err := transaction.AddInputsForTransaction(withdraw.Transaction, []*types.Cell{
-		{
-			OutPoint: &types.OutPoint{
-				TxHash: types.HexToHash("0xc72d7bffcc3302f8267fecb103f655e63e7b94b6f6e863cd6a0130ffec296684"),
-				Index:  1,
-			},
-		},
-	})
-	if err != nil {
-		log.Fatalf("add inputs to transaction error: %v", err)
-	}
-
-	var groups []int
-	groups = append(groups, index)
-	groups = append(groups, group...)
-
 	// sign dao input
-	err = transaction.SingleSignTransaction(withdraw.Transaction, groups, witnessArgs, key)
+	err = transaction.SingleSignTransaction(withdraw.Transaction, []int{index}, witnessArgs, key)
 	if err != nil {
 		log.Fatalf("sign dao transaction error: %v", err)
 	}
-
-	withdraw.Transaction.Witnesses[index] = append(withdraw.Transaction.Witnesses[index], types.SerializeUint64(headerIndex)...)
 
 	hash, err := client.SendTransaction(context.Background(), withdraw.Transaction)
 	if err != nil {

@@ -117,19 +117,19 @@ func NewWithdrawPhase2(scripts *utils.SystemScripts, isMultisig bool) *WithdrawP
 	}
 }
 
-func (w *WithdrawPhase2) AddDaoWithdrawTick(client rpc.Client, depositCell *types.Cell, withdrawCell *types.Cell) (int, uint64, error) {
+func (w *WithdrawPhase2) AddDaoWithdrawTick(client rpc.Client, depositCell *types.Cell, withdrawCell *types.Cell, fee uint64) (int, *types.WitnessArgs, error) {
 	headerDeposit, err := client.GetHeader(context.Background(), depositCell.BlockHash)
 	if err != nil {
-		return 0, 0, fmt.Errorf("get block header from address %s error: %v", depositCell.BlockHash.String(), err)
+		return 0, nil, fmt.Errorf("get block header from address %s error: %v", depositCell.BlockHash.String(), err)
 	}
 
 	headerWithdraw, err := client.GetHeader(context.Background(), withdrawCell.BlockHash)
 	if err != nil {
-		return 0, 0, fmt.Errorf("get block header from address %s error: %v", withdrawCell.BlockHash.String(), err)
+		return 0, nil, fmt.Errorf("get block header from address %s error: %v", withdrawCell.BlockHash.String(), err)
 	}
 
 	withdrawEpoch := types.ParseEpoch(headerWithdraw.Epoch)
-	depositEpoch := types.ParseEpoch(headerWithdraw.Epoch)
+	depositEpoch := types.ParseEpoch(headerDeposit.Epoch)
 
 	withdrawFraction := withdrawEpoch.Index * depositEpoch.Length
 	depositFraction := depositEpoch.Index * withdrawEpoch.Length
@@ -152,11 +152,16 @@ func (w *WithdrawPhase2) AddDaoWithdrawTick(client rpc.Client, depositCell *type
 		Index:  depositCell.OutPoint.Index,
 	}, headerWithdraw.Hash)
 	if err != nil {
-		return 0, 0, fmt.Errorf("calculate Dao Maximum withdraw error: %v", err)
+		return 0, nil, fmt.Errorf("calculate Dao maximum withdraw error: %v", err)
+	}
+
+	if fee > capacity {
+		return 0, nil, fmt.Errorf("the fee(%d) is too big that withdraw(%d) is not enough", fee, capacity)
 	}
 
 	w.Transaction.HeaderDeps = append(w.Transaction.HeaderDeps, depositCell.BlockHash)
 	w.Transaction.HeaderDeps = append(w.Transaction.HeaderDeps, withdrawCell.BlockHash)
+
 	w.Transaction.Inputs = append(w.Transaction.Inputs, &types.CellInput{
 		Since: minimalSince.Uint64(),
 		PreviousOutput: &types.OutPoint{
@@ -166,12 +171,16 @@ func (w *WithdrawPhase2) AddDaoWithdrawTick(client rpc.Client, depositCell *type
 	})
 	w.Transaction.Witnesses = append(w.Transaction.Witnesses, []byte{})
 	w.Transaction.Outputs = append(w.Transaction.Outputs, &types.CellOutput{
-		Capacity: capacity,
+		Capacity: capacity - fee,
 		Lock:     withdrawCell.Lock,
 	})
-	w.Transaction.OutputsData = append(w.Transaction.OutputsData, types.SerializeUint64(headerDeposit.Number))
+	w.Transaction.OutputsData = append(w.Transaction.OutputsData, []byte{})
 
-	return len(w.Transaction.Inputs) - 1, uint64(len(w.Transaction.HeaderDeps) - 2), nil
+	return len(w.Transaction.Inputs) - 1, &types.WitnessArgs{
+		Lock:       make([]byte, 65),
+		InputType:  types.SerializeUint64(uint64(len(w.Transaction.HeaderDeps) - 2)),
+		OutputType: nil,
+	}, nil
 }
 
 func (w *WithdrawPhase2) AddOutput(lock *types.Script, amount uint64) error {
