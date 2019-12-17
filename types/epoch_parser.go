@@ -18,5 +18,5 @@ func ParseEpoch(epoch uint64) *EpochParams {
 }
 
 func (ep *EpochParams) Uint64() uint64 {
-	return (ep.Length << 40) + (ep.Index << 24) + ep.Number
+	return (32 << 56) + (ep.Length << 40) + (ep.Index << 24) + ep.Number
 }

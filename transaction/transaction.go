@@ -122,7 +122,9 @@ func SingleSignTransaction(transaction *types.Transaction, group []int, witnessA
 	}
 
 	wa := &types.WitnessArgs{
-		Lock: signed,
+		Lock:       signed,
+		InputType:  witnessArgs.InputType,
+		OutputType: witnessArgs.OutputType,
 	}
 	wab, err := wa.Serialize()
 	if err != nil {
@@ -181,7 +183,9 @@ func MultiSignTransaction(transaction *types.Transaction, group []int, witnessAr
 	}
 
 	wa := &types.WitnessArgs{
-		Lock: append(serialize, signed...),
+		Lock:       append(serialize, signed...),
+		InputType:  witnessArgs.InputType,
+		OutputType: witnessArgs.OutputType,
 	}
 	wab, err := wa.Serialize()
 	if err != nil {
