@@ -4,7 +4,7 @@ import (
 	"github.com/minio/blake2b-simd"
 )
 
-var ckbHashPersonnalization = []byte("ckb-default-hash")
+var ckbHashPersonalization = []byte("ckb-default-hash")
 
 func Blake160(data []byte) ([]byte, error) {
 	blake, err := Blake256(data)
@@ -17,7 +17,7 @@ func Blake160(data []byte) ([]byte, error) {
 func Blake256(data []byte) ([]byte, error) {
 	config := &blake2b.Config{
 		Size:   32,
-		Person: ckbHashPersonnalization,
+		Person: ckbHashPersonalization,
 	}
 	hash, err := blake2b.New(config)
 	if err != nil {
