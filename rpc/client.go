@@ -107,6 +107,9 @@ type Client interface {
 	// SendTransaction send new transaction into transaction pool.
 	SendTransaction(ctx context.Context, tx *types.Transaction) (*types.Hash, error)
 
+	// SendTransactionNoneValidation send new transaction into transaction pool skipping outputs validation.
+	SendTransactionNoneValidation(ctx context.Context, tx *types.Transaction) (*types.Hash, error)
+
 	// TxPoolInfo return the transaction pool information
 	TxPoolInfo(ctx context.Context) (*types.TxPoolInfo, error)
 
@@ -516,6 +519,17 @@ func (cli *client) SendTransaction(ctx context.Context, tx *types.Transaction) (
 	var result types.Hash
 
 	err := cli.c.CallContext(ctx, &result, "send_transaction", fromTransaction(tx))
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, err
+}
+
+func (cli *client) SendTransactionNoneValidation(ctx context.Context, tx *types.Transaction) (*types.Hash, error) {
+	var result types.Hash
+
+	err := cli.c.CallContext(ctx, &result, "send_transaction", fromTransaction(tx), "passthrough")
 	if err != nil {
 		return nil, err
 	}
