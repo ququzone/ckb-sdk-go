@@ -126,13 +126,13 @@ type WitnessArgs struct {
 }
 
 type UncleBlock struct {
-	Header    *Header `json:"header"`
-	Proposals []uint  `json:"proposals"`
+	Header    *Header  `json:"header"`
+	Proposals []string `json:"proposals"`
 }
 
 type Block struct {
 	Header       *Header        `json:"header"`
-	Proposals    []uint         `json:"proposals"`
+	Proposals    []string       `json:"proposals"`
 	Transactions []*Transaction `json:"transactions"`
 	Uncles       []*UncleBlock  `json:"uncles"`
 }

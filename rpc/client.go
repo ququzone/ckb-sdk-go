@@ -220,7 +220,7 @@ func (cli *client) GetBlock(ctx context.Context, hash types.Hash) (*types.Block,
 
 	return &types.Block{
 		Header:       toHeader(block.Header),
-		Proposals:    toUints(block.Proposals),
+		Proposals:    block.Proposals,
 		Transactions: toTransactions(block.Transactions),
 		Uncles:       toUncles(block.Uncles),
 	}, nil
@@ -313,7 +313,7 @@ func (cli *client) GetBlockByNumber(ctx context.Context, number uint64) (*types.
 
 	return &types.Block{
 		Header:       toHeader(block.Header),
-		Proposals:    toUints(block.Proposals),
+		Proposals:    block.Proposals,
 		Transactions: toTransactions(block.Transactions),
 		Uncles:       toUncles(block.Uncles),
 	}, nil

@@ -79,15 +79,15 @@ type inTransaction struct {
 }
 
 type uncleBlock struct {
-	Header    header         `json:"header"`
-	Proposals []hexutil.Uint `json:"proposals"`
+	Header    header   `json:"header"`
+	Proposals []string `json:"proposals"`
 }
 
 type block struct {
-	Header       header         `json:"header"`
-	Proposals    []hexutil.Uint `json:"proposals"`
-	Transactions []transaction  `json:"transactions"`
-	Uncles       []uncleBlock   `json:"uncles"`
+	Header       header        `json:"header"`
+	Proposals    []string      `json:"proposals"`
+	Transactions []transaction `json:"transactions"`
+	Uncles       []uncleBlock  `json:"uncles"`
 }
 
 type cell struct {
@@ -316,7 +316,7 @@ func toUncles(uncles []uncleBlock) []*types.UncleBlock {
 		block := uncles[i]
 		result[i] = &types.UncleBlock{
 			Header:    toHeader(block.Header),
-			Proposals: toUints(block.Proposals),
+			Proposals: block.Proposals,
 		}
 	}
 	return result
