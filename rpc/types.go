@@ -91,11 +91,13 @@ type block struct {
 }
 
 type cell struct {
-	BlockHash types.Hash     `json:"block_hash"`
-	Capacity  hexutil.Uint64 `json:"capacity"`
-	Lock      *script        `json:"lock"`
-	OutPoint  *outPoint      `json:"out_point"`
-	Type      *script        `json:"type"`
+	BlockHash     types.Hash     `json:"block_hash"`
+	Capacity      hexutil.Uint64 `json:"capacity"`
+	Lock          *script        `json:"lock"`
+	OutPoint      *outPoint      `json:"out_point"`
+	Type          *script        `json:"type"`
+	Cellbase      bool           `json:"cellbase,omitempty"`
+	OutputDataLen uint64         `json:"output_data_len,omitempty"`
 }
 
 type cellData struct {
@@ -338,6 +340,8 @@ func toCells(cells []cell) []*types.Cell {
 				TxHash: cell.OutPoint.TxHash,
 				Index:  uint(cell.OutPoint.Index),
 			},
+			Cellbase:      cell.Cellbase,
+			OutputDataLen: uint64(cell.OutputDataLen),
 		}
 		if cell.Type != nil {
 			result[i].Type = &types.Script{

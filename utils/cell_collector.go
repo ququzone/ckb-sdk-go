@@ -13,6 +13,7 @@ type CellCollector struct {
 	Capacity   uint64
 	TypeScript *types.Script
 	UseIndex   bool
+	EmptyData  bool
 }
 
 func NewCellCollector(client rpc.Client, lockScript *types.Script, capacity uint64) *CellCollector {
@@ -21,6 +22,7 @@ func NewCellCollector(client rpc.Client, lockScript *types.Script, capacity uint
 		LockScript: lockScript,
 		Capacity:   capacity,
 		UseIndex:   false,
+		EmptyData:  true,
 	}
 }
 
@@ -80,7 +82,7 @@ func collectFromIndex(client rpc.Client, lockHash types.Hash, capacity uint64, t
 	return result, total, nil
 }
 
-func collectFromBlocks(client rpc.Client, lockHash types.Hash, capacity uint64, typeScript *types.Script) ([]*types.Cell, uint64, error) {
+func collectFromBlocks(client rpc.Client, lockHash types.Hash, capacity uint64, typeScript *types.Script, emptyData bool) ([]*types.Cell, uint64, error) {
 	header, err := client.GetTipHeader(context.Background())
 	if err != nil {
 		return nil, 0, err
@@ -108,6 +110,9 @@ func collectFromBlocks(client rpc.Client, lockHash types.Hash, capacity uint64, 
 				if cells[i].Type != nil {
 					continue
 				}
+			}
+			if emptyData && cells[i].OutputDataLen > 0 {
+				continue
 			}
 			result = append(result, cells[i])
 			total += cells[i].Capacity

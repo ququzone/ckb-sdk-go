@@ -138,11 +138,13 @@ type Block struct {
 }
 
 type Cell struct {
-	BlockHash Hash      `json:"block_hash"`
-	Capacity  uint64    `json:"capacity"`
-	Lock      *Script   `json:"lock"`
-	OutPoint  *OutPoint `json:"out_point"`
-	Type      *Script   `json:"type"`
+	BlockHash     Hash      `json:"block_hash"`
+	Capacity      uint64    `json:"capacity"`
+	Lock          *Script   `json:"lock"`
+	OutPoint      *OutPoint `json:"out_point"`
+	Type          *Script   `json:"type"`
+	Cellbase      bool      `json:"cellbase,omitempty"`
+	OutputDataLen uint64    `json:"output_data_len,omitempty"`
 }
 
 type CellData struct {
