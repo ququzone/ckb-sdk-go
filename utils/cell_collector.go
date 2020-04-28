@@ -34,7 +34,7 @@ func (collector *CellCollector) Collect() ([]*types.Cell, uint64, error) {
 	if collector.UseIndex {
 		return collectFromIndex(collector.Client, lockHash, collector.Capacity, collector.TypeScript)
 	}
-	return collectFromBlocks(collector.Client, lockHash, collector.Capacity, collector.TypeScript)
+	return collectFromBlocks(collector.Client, lockHash, collector.Capacity, collector.TypeScript, collector.EmptyData)
 }
 
 func collectFromIndex(client rpc.Client, lockHash types.Hash, capacity uint64, typeScript *types.Script) ([]*types.Cell, uint64, error) {
