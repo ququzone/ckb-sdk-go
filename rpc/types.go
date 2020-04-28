@@ -97,7 +97,7 @@ type cell struct {
 	OutPoint      *outPoint      `json:"out_point"`
 	Type          *script        `json:"type"`
 	Cellbase      bool           `json:"cellbase,omitempty"`
-	OutputDataLen uint64         `json:"output_data_len,omitempty"`
+	OutputDataLen hexutil.Uint64 `json:"output_data_len,omitempty"`
 }
 
 type cellData struct {
