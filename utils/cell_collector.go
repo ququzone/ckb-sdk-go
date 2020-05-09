@@ -68,6 +68,7 @@ func (c *CellCollector) collectFromBlocks(lockHash types.Hash) (*CollectResult, 
 		return nil, err
 	}
 	var result CollectResult
+	result.Options = make(map[string]interface{})
 	var start uint64
 	var stop bool
 	for {
