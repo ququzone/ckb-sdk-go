@@ -413,27 +413,27 @@ func main() {
 		log.Fatalf("create rpc client error: %v", err)
 	}
 
-	args, _ := hex.DecodeString("6407c2ef9bd96e8e14ac4cd15d860e9331802172")
+	args, _ := hex.DecodeString("edcda9513fa030ce4308e29245a22c022d0443bb")
 
 	collector := utils.NewCellCollector(client, &types.Script{
 		CodeHash: types.HexToHash("0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"),
 		HashType: types.HashTypeType,
 		Args:     args,
-	}, 10000000000000000)
+	}, utils.NewCapacityCellProcessor(10000000000000000))
 
 	// default collect null type script
 	fmt.Println(collector.Collect())
 
 	// collect by type script
+	collector.EmptyData = false
 	collector.TypeScript = &types.Script{
-		CodeHash: types.HexToHash("0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e"),
-		HashType: types.HashTypeType,
-		Args:     []byte{},
+		CodeHash: types.HexToHash("0x48dbf59b4c7ee1547238021b4869bceedf4eea6b43772e5d66ef8865b6ae7212"),
+		HashType: types.HashTypeData,
+		Args:     types.HexToHash("0x6a242b57227484e904b4e08ba96f19a623c367dcbd18675ec6f2a71a0ff4ec26").Bytes(),
 	}
 
-	cells, total, err := collector.Collect()
+	cells, err := collector.Collect()
 
-	fmt.Println(total)
 	fmt.Println(err)
 	fmt.Println(cells)
 }
