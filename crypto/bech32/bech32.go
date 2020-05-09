@@ -11,10 +11,6 @@ const charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 var gen = []int{0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3}
 
 func Decode(bech string) (string, []byte, error) {
-	if len(bech) < 8 || len(bech) > 90 {
-		return "", nil, fmt.Errorf("invalid length %d",
-			len(bech))
-	}
 	for i := 0; i < len(bech); i++ {
 		if bech[i] < 33 || bech[i] > 126 {
 			return "", nil, fmt.Errorf("invalid character: '%c'", bech[i])
