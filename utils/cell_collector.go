@@ -7,89 +7,68 @@ import (
 	"github.com/ququzone/ckb-sdk-go/types"
 )
 
+type CollectResult struct {
+	Cells    []*types.Cell
+	Capacity uint64
+	Options  map[string]interface{}
+}
+
+type CellProcessor interface {
+	Process(*types.Cell, *CollectResult) (bool, error)
+}
+
+type CapacityCellProcessor struct {
+	Max uint64
+}
+
+func NewCapacityCellProcessor(capacity uint64) *CapacityCellProcessor {
+	return &CapacityCellProcessor{
+		Max: capacity,
+	}
+}
+
+func (p *CapacityCellProcessor) Process(cell *types.Cell, result *CollectResult) (bool, error) {
+	result.Capacity = result.Capacity + cell.Capacity
+	result.Cells = append(result.Cells, cell)
+	if p.Max > 0 && result.Capacity >= p.Max {
+		return true, nil
+	}
+	return false, nil
+}
+
 type CellCollector struct {
 	Client     rpc.Client
 	LockScript *types.Script
-	Capacity   uint64
 	TypeScript *types.Script
+	Processor  CellProcessor
 	UseIndex   bool
 	EmptyData  bool
 }
 
-func NewCellCollector(client rpc.Client, lockScript *types.Script, capacity uint64) *CellCollector {
+func NewCellCollector(client rpc.Client, lockScript *types.Script, processor CellProcessor) *CellCollector {
 	return &CellCollector{
 		Client:     client,
 		LockScript: lockScript,
-		Capacity:   capacity,
-		UseIndex:   false,
+		Processor:  processor,
 		EmptyData:  true,
 	}
 }
 
-func (collector *CellCollector) Collect() ([]*types.Cell, uint64, error) {
-	lockHash, err := collector.LockScript.Hash()
+func (c *CellCollector) Collect() (*CollectResult, error) {
+	lockHash, err := c.LockScript.Hash()
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	if collector.UseIndex {
-		return collectFromIndex(collector.Client, lockHash, collector.Capacity, collector.TypeScript)
-	}
-	return collectFromBlocks(collector.Client, lockHash, collector.Capacity, collector.TypeScript, collector.EmptyData)
+	return c.collectFromBlocks(lockHash)
 }
 
-func collectFromIndex(client rpc.Client, lockHash types.Hash, capacity uint64, typeScript *types.Script) ([]*types.Cell, uint64, error) {
-	var result []*types.Cell
-	var start uint
-	var total uint64
-	var stop bool
-	for {
-		cells, err := client.GetLiveCellsByLockHash(context.Background(), lockHash, start, 50, false)
-		if err != nil {
-			return nil, 0, err
-		}
-		for i := 0; i < len(cells); i++ {
-			cell := cells[i]
-			if typeScript != nil {
-				if !typeScript.Equals(cell.CellOutput.Type) {
-					continue
-				}
-			} else {
-				if cell.CellOutput.Type != nil {
-					continue
-				}
-			}
-			total += cell.CellOutput.Capacity
-			result = append(result, &types.Cell{
-				// set blockhash to empty
-				BlockHash: types.Hash{},
-				Capacity:  cell.CellOutput.Capacity,
-				Lock:      cell.CellOutput.Lock,
-				OutPoint: &types.OutPoint{
-					TxHash: cell.CreatedBy.TxHash,
-					Index:  cell.CreatedBy.Index,
-				},
-				Type: cell.CellOutput.Type,
-			})
-			if total >= capacity {
-				stop = true
-				break
-			}
-		}
-		if stop || len(cells) < 50 {
-			break
-		}
-	}
-	return result, total, nil
-}
-
-func collectFromBlocks(client rpc.Client, lockHash types.Hash, capacity uint64, typeScript *types.Script, emptyData bool) ([]*types.Cell, uint64, error) {
-	header, err := client.GetTipHeader(context.Background())
+func (c *CellCollector) collectFromBlocks(lockHash types.Hash) (*CollectResult, error) {
+	header, err := c.Client.GetTipHeader(context.Background())
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	var result []*types.Cell
+	var result CollectResult
 	var start uint64
-	var total uint64
 	var stop bool
 	for {
 		end := start + 100
@@ -97,27 +76,29 @@ func collectFromBlocks(client rpc.Client, lockHash types.Hash, capacity uint64, 
 			end = header.Number
 			stop = true
 		}
-		cells, err := client.GetCellsByLockHash(context.Background(), lockHash, start, end)
+		cells, err := c.Client.GetCellsByLockHash(context.Background(), lockHash, start, end)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
-		for i := 0; i < len(cells); i++ {
-			if typeScript != nil {
-				if !typeScript.Equals(cells[i].Type) {
+		for _, cell := range cells {
+			if c.TypeScript != nil {
+				if !c.TypeScript.Equals(cell.Type) {
 					continue
 				}
 			} else {
-				if cells[i].Type != nil {
+				if cell.Type != nil {
 					continue
 				}
 			}
-			if emptyData && cells[i].OutputDataLen > 0 {
+			if c.EmptyData && cell.OutputDataLen > 0 {
 				continue
 			}
-			result = append(result, cells[i])
-			total += cells[i].Capacity
-			if total >= capacity {
-				stop = true
+			s, err := c.Processor.Process(cell, &result)
+			if err != nil {
+				return nil, err
+			}
+			if s {
+				stop = s
 				break
 			}
 		}
@@ -126,5 +107,5 @@ func collectFromBlocks(client rpc.Client, lockHash types.Hash, capacity uint64, 
 		}
 		start += 100
 	}
-	return result, total, nil
+	return &result, nil
 }
