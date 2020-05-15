@@ -106,7 +106,7 @@ func (c *CellCollector) collectFromBlocks(lockHash types.Hash) (*CollectResult, 
 		if stop {
 			break
 		}
-		start += 100
+		start = end + 1
 	}
 	return &result, nil
 }
