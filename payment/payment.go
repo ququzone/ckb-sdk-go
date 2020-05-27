@@ -45,15 +45,15 @@ func NewPayment(from, to string, amount, fee uint64) (*Payment, error) {
 }
 
 func (p *Payment) GenerateTx(client rpc.Client) (*types.Transaction, error) {
-	collector := utils.NewCellCollector(client, p.From, p.Amount+p.Fee)
+	collector := utils.NewCellCollector(client, p.From, utils.NewCapacityCellProcessor(p.Amount+p.Fee))
 
-	cells, total, err := collector.Collect()
+	result, err := collector.Collect()
 	if err != nil {
 		return nil, fmt.Errorf("collect cell error: %v", err)
 	}
 
-	if total < p.Amount+p.Fee {
-		return nil, fmt.Errorf("insufficient balance: %d", total)
+	if result.Capacity < p.Amount+p.Fee {
+		return nil, fmt.Errorf("insufficient balance: %d", result.Capacity)
 	}
 
 	systemScripts, err := utils.NewSystemScripts(client)
@@ -68,15 +68,19 @@ func (p *Payment) GenerateTx(client rpc.Client) (*types.Transaction, error) {
 	})
 	tx.OutputsData = [][]byte{{}}
 
-	if total-p.Amount-p.Fee > 0 {
-		tx.Outputs = append(tx.Outputs, &types.CellOutput{
-			Capacity: total - p.Amount - p.Fee,
-			Lock:     p.From,
-		})
-		tx.OutputsData = [][]byte{{}, {}}
+	if result.Capacity-p.Amount-p.Fee > 0 {
+		if result.Capacity-p.Amount-p.Fee >= 6100000000 {
+			tx.Outputs = append(tx.Outputs, &types.CellOutput{
+				Capacity: result.Capacity - p.Amount - p.Fee,
+				Lock:     p.From,
+			})
+			tx.OutputsData = [][]byte{{}, {}}
+		} else {
+			tx.Outputs[0].Capacity = result.Capacity - p.Fee
+		}
 	}
 
-	group, witnessArgs, err := transaction.AddInputsForTransaction(tx, cells)
+	group, witnessArgs, err := transaction.AddInputsForTransaction(tx, result.Cells)
 	if err != nil {
 		return nil, fmt.Errorf("add inputs to transaction error: %v", err)
 	}
