@@ -213,7 +213,7 @@ func SingleSegmentSignMessage(transaction *types.Transaction, start int, end int
 	message := append(hash.Bytes(), length...)
 	message = append(message, data...)
 
-	for i := start; i < end; i++ {
+	for i := start + 1; i < end; i++ {
 		var data []byte
 		length := make([]byte, 8)
 		binary.LittleEndian.PutUint64(length, uint64(len(data)))
@@ -248,4 +248,19 @@ func SingleSegmentSignTransaction(transaction *types.Transaction, start int, end
 	transaction.Witnesses[start] = wab
 
 	return nil
+}
+
+func CalculateTransactionFee(tx *types.Transaction, feeRate uint64) (uint64, error) {
+	bytes, err := tx.Serialize()
+	if err != nil {
+		return 0, err
+	}
+
+	txSize := uint64(len(bytes)) + 4
+	fee := txSize * feeRate / 1000
+
+	if fee*1000 < txSize*feeRate {
+		fee += 1
+	}
+	return fee, nil
 }
