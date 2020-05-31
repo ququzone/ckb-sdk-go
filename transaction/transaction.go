@@ -196,3 +196,56 @@ func MultiSignTransaction(transaction *types.Transaction, group []int, witnessAr
 
 	return nil
 }
+
+func SingleSegmentSignMessage(transaction *types.Transaction, start int, end int, witnessArgs *types.WitnessArgs) ([]byte, error) {
+	data, err := witnessArgs.Serialize()
+	if err != nil {
+		return nil, err
+	}
+	length := make([]byte, 8)
+	binary.LittleEndian.PutUint64(length, uint64(len(data)))
+
+	hash, err := transaction.ComputeHash()
+	if err != nil {
+		return nil, err
+	}
+
+	message := append(hash.Bytes(), length...)
+	message = append(message, data...)
+
+	for i := start; i < end; i++ {
+		var data []byte
+		length := make([]byte, 8)
+		binary.LittleEndian.PutUint64(length, uint64(len(data)))
+		message = append(message, length...)
+		message = append(message, data...)
+	}
+
+	return blake2b.Blake256(message)
+}
+
+func SingleSegmentSignTransaction(transaction *types.Transaction, start int, end int, witnessArgs *types.WitnessArgs, key crypto.Key) error {
+	message, err := SingleSegmentSignMessage(transaction, start, end, witnessArgs)
+	if err != nil {
+		return err
+	}
+
+	signed, err := key.Sign(message)
+	if err != nil {
+		return err
+	}
+
+	wa := &types.WitnessArgs{
+		Lock:       signed,
+		InputType:  witnessArgs.InputType,
+		OutputType: witnessArgs.OutputType,
+	}
+	wab, err := wa.Serialize()
+	if err != nil {
+		return err
+	}
+
+	transaction.Witnesses[start] = wab
+
+	return nil
+}
