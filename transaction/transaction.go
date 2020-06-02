@@ -16,7 +16,8 @@ var (
 		InputType:  nil,
 		OutputType: nil,
 	}
-	SignaturePlaceholder = make([]byte, 65)
+	EmptyWitnessArgPlaceholder = make([]byte, 89)
+	SignaturePlaceholder       = make([]byte, 65)
 )
 
 func NewSecp256k1SingleSigTx(scripts *utils.SystemScripts) *types.Transaction {
@@ -82,6 +83,7 @@ func AddInputsForTransaction(transaction *types.Transaction, cells []*types.Cell
 		transaction.Witnesses = append(transaction.Witnesses, []byte{})
 		group[i] = start + i
 	}
+	transaction.Witnesses[start] = EmptyWitnessArgPlaceholder
 	return group, EmptyWitnessArg, nil
 }
 
@@ -256,9 +258,15 @@ func CalculateTransactionFee(tx *types.Transaction, feeRate uint64) (uint64, err
 		return 0, err
 	}
 
-	txSize := uint64(len(bytes)) + 4
+	// raw tx serialize
+	txSize := uint64(len(bytes))
+	// witness serialize
+	txSize += uint64(len(types.SerializeDynVec(tx.Witnesses)))
+	// raw tx + witness offset
+	txSize += 12
+	// tx offset
+	txSize += 4
 	fee := txSize * feeRate / 1000
-
 	if fee*1000 < txSize*feeRate {
 		fee += 1
 	}
