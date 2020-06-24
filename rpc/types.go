@@ -118,7 +118,7 @@ type cellWithStatus struct {
 type transactionWithStatus struct {
 	Transaction transaction `json:"transaction"`
 	TxStatus    struct {
-		BlockHash types.Hash              `json:"block_hash"`
+		BlockHash *types.Hash             `json:"block_hash"`
 		Status    types.TransactionStatus `json:"status"`
 	} `json:"tx_status"`
 }
