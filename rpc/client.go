@@ -117,6 +117,9 @@ type Client interface {
 	// GetBlockchainInfo return state info of blockchain
 	GetBlockchainInfo(ctx context.Context) (*types.BlockchainInfo, error)
 
+	////// Batch
+	BatchTransactions(ctx context.Context, batch []types.BatchTransactionItem) error
+
 	// Close close client
 	Close()
 }
@@ -559,6 +562,7 @@ func (cli *client) GetBlockchainInfo(ctx context.Context) (*types.BlockchainInfo
 	var result blockchainInfo
 
 	err := cli.c.CallContext(ctx, &result, "get_blockchain_info")
+
 	if err != nil {
 		return nil, err
 	}
@@ -582,4 +586,38 @@ func (cli *client) GetBlockchainInfo(ctx context.Context) (*types.BlockchainInfo
 	}
 
 	return ret, err
+}
+
+func (cli *client) BatchTransactions(ctx context.Context, batch []types.BatchTransactionItem) error {
+	req := make([]rpc.BatchElem, len(batch))
+
+	for i, item := range batch {
+		args := make([]interface{}, 1)
+		args[0] = item.Hash
+		req[i] = rpc.BatchElem{
+			Method: "get_transaction",
+			Result: &transactionWithStatus{},
+			Args:   args,
+		}
+	}
+
+	err := cli.c.BatchCallContext(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	for i, item := range req {
+		batch[i].Error = item.Error
+		if batch[i].Error == nil {
+			batch[i].Result = &types.TransactionWithStatus{
+				Transaction: toTransaction(item.Result.(*transactionWithStatus).Transaction),
+				TxStatus: &types.TxStatus{
+					BlockHash: item.Result.(*transactionWithStatus).TxStatus.BlockHash,
+					Status:    item.Result.(*transactionWithStatus).TxStatus.Status,
+				},
+			}
+		}
+	}
+
+	return nil
 }
