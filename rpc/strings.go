@@ -15,3 +15,13 @@ func TransactionString(tx *types.Transaction) (string, error) {
 
 	return string(bytes), nil
 }
+
+func TransactionFromString(tx string) (*types.Transaction, error) {
+	var itx transaction
+	err := json.Unmarshal([]byte(tx), &itx)
+	if err != nil {
+		return nil, err
+	}
+
+	return toTransaction(itx), nil
+}
