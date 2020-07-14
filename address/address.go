@@ -53,13 +53,15 @@ func Generate(mode Mode, script *types.Script) (string, error) {
 				return "", err
 			}
 			return bech32.Encode((string)(mode), data)
-		} else {
-			// generate_full_payload_address
-			return generateFullPayloadAddress(FULL_TYPE_FORMAT, mode, script)
 		}
 	}
 
-	return generateFullPayloadAddress(FULL_DATA_FORMAT, mode, script)
+	hashType := FULL_TYPE_FORMAT
+	if script.HashType == types.HashTypeData {
+		hashType = FULL_DATA_FORMAT
+	}
+
+	return generateFullPayloadAddress(hashType, mode, script)
 }
 
 func generateFullPayloadAddress(hashType string, mode Mode, script *types.Script) (string, error) {
